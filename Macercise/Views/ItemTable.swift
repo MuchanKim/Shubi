@@ -74,7 +74,11 @@ struct ItemTable<Key: Hashable>: View {
         // Before `.inspector`, so the overlay centers on the table, not on the table plus the inspector.
         .overlay {
             if isScanning {
-                ProgressView("스캔 중…")
+                VStack(spacing: Layout.Spacing.s) {
+                    Text("스캔 중…").foregroundStyle(.secondary)
+                    ScanningBar().frame(width: Layout.scanningBarWidth)
+                }
+                .accessibilityRepresentation { ProgressView("스캔 중…") }
             } else if let failure {
                 ContentUnavailableView("스캔하지 못했어요", systemImage: "exclamationmark.triangle", description: Text(failure))
             } else if items.isEmpty {
