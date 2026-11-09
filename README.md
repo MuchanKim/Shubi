@@ -108,8 +108,12 @@ Shubi/
   Design/         Spacing, themes, per-theme colors
   Views/          Summary, section screens, settings, shared views
   Resources/      Assets, Lottie files, string catalogs, credits
-ShubiTests/   Swift Testing suites
+ShubiTests/       Swift Testing suites
 ```
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report a bug, what changes that delete files need, and how to open a pull request.
 
 ## License
 
