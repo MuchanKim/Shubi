@@ -18,7 +18,7 @@ struct DeleteSheet: View {
         VStack(alignment: .leading, spacing: Layout.Spacing.l) {
             if failures.isEmpty {
                 VStack(alignment: .leading, spacing: Layout.Spacing.xs) {
-                    Text("\(items.count)개 항목 정리").font(.title3.bold())
+                    Text("\(items.count)개 항목 정리").font(.title3.weight(.semibold))
                     Text("합계 \(items.reduce(0) { $0 + $1.size }.formatted(.byteCount(style: .file)))")
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
@@ -31,7 +31,7 @@ struct DeleteSheet: View {
             } else {
                 // The caller rescans after a delete, so `items` may already be the new scan here.
                 Label("\(failures.count)개 항목을 지우지 못했어요", systemImage: "exclamationmark.triangle.fill")
-                    .font(.title3.bold())
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(.red)
             }
 

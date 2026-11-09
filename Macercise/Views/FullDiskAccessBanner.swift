@@ -10,7 +10,7 @@ struct FullDiskAccessBanner: View {
             if !hasAccess {
                 VStack(alignment: .leading, spacing: Layout.Spacing.s) {
                     Label("전체 디스크 접근 권한", systemImage: "lock.fill")
-                        .font(.callout.bold())
+                        .font(.callout.weight(.semibold))
                         .labelStyle(BannerLabelStyle())
                     Text("Safari 캐시와 앱 컨테이너를 보려면 필요해요.")
                         .font(.caption)
