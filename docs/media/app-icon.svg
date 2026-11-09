@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <title>Shubi</title>
+  <desc>Aurora water, mint to periwinkle to lilac, held low inside a glass orb on a pale aurora tile.</desc>
+  <defs>
+    <path id="tile" d="M318 100H706C846 100 924 178 924 318V706C924 846 846 924 706 924H318C178 924 100 846 100 706V318C100 178 178 100 318 100Z"/>
+    <clipPath id="tileClip"><use href="#tile"/></clipPath>
+    <clipPath id="orbClip"><circle cx="512" cy="495" r="283"/></clipPath>
+    <linearGradient id="tileFill" x1="160" y1="100" x2="864" y2="924" gradientUnits="userSpaceOnUse"><stop stop-color="#EEFBF7"/><stop offset=".5" stop-color="#F3F6FF"/><stop offset="1" stop-color="#E7E0FA"/></linearGradient>
+    <radialGradient id="glass" cx="394" cy="326" r="493" gradientUnits="userSpaceOnUse"><stop stop-color="#FCFFFF"/><stop offset=".5" stop-color="#EAF0FC"/><stop offset="1" stop-color="#C9CFF0"/></radialGradient>
+    <linearGradient id="rim" x1="298" y1="230" x2="742" y2="792" gradientUnits="userSpaceOnUse"><stop stop-color="#7B84D8"/><stop offset=".32" stop-color="#BCC4F0"/><stop offset=".66" stop-color="#6A72D0"/><stop offset="1" stop-color="#454DAE"/></linearGradient>
+    <linearGradient id="water" x1="512" y1="472" x2="512" y2="788" gradientUnits="userSpaceOnUse"><stop stop-color="#7FD8C3"/><stop offset=".5" stop-color="#7FA9F2"/><stop offset="1" stop-color="#9B7DEB"/></linearGradient>
+    <linearGradient id="waterTop" x1="280" y1="464" x2="740" y2="544" gradientUnits="userSpaceOnUse"><stop stop-color="#C4F2E8"/><stop offset=".55" stop-color="#C2D4FF"/><stop offset="1" stop-color="#D9C6FF"/></linearGradient>
+    <linearGradient id="reflection" x1="304" y1="600" x2="640" y2="814" gradientUnits="userSpaceOnUse"><stop stop-color="#F3EEFF" stop-opacity="0"/><stop offset="1" stop-color="#F3EEFF" stop-opacity=".6"/></linearGradient>
+    <filter id="tileShadow" x="40" y="60" width="944" height="944" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="14"/></filter>
+    <filter id="contact" x="190" y="700" width="644" height="180" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="17"/></filter>
+  </defs>
+  <use href="#tile" transform="translate(0 12)" fill="#2B2F6B" opacity=".22" filter="url(#tileShadow)"/>
+  <use href="#tile" fill="url(#tileFill)"/>
+  <g clip-path="url(#tileClip)">
+    <use href="#tile" stroke="#FFFFFF" stroke-width="6"/>
+    <ellipse cx="512" cy="794" rx="229" ry="28" fill="#3B3F86" opacity=".18" filter="url(#contact)"/>
+    <circle cx="512" cy="495" r="310" fill="url(#rim)"/>
+    <circle cx="512" cy="491" r="290" fill="#FBFCFF"/>
+    <circle cx="512" cy="495" r="283" fill="url(#glass)"/>
+    <g clip-path="url(#orbClip)">
+      <path d="M203 504C310 452 405 468 513 491C625 515 715 499 821 469V812H203Z" fill="url(#water)"/>
+      <path d="M203 504C310 452 405 468 513 491C625 515 715 499 821 469C743 548 618 555 506 525C391 494 298 490 203 524Z" fill="url(#waterTop)"/>
+      <path d="M251 612C350 760 567 811 756 657C684 839 354 850 251 612Z" fill="url(#reflection)"/>
+      <path d="M266 442C277 327 346 259 433 242C377 280 333 343 317 420C305 450 283 462 266 442Z" fill="#FFFFFF" opacity=".8"/>
+    </g>
+    <path d="M331 264C376 228 422 210 475 206" stroke="#FFFFFF" stroke-width="13" stroke-linecap="round" opacity=".85"/>
+  </g>
+</svg>

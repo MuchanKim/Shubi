@@ -1,0 +1,154 @@
+# Tag vX.Y.Z → validate → build, sign, notarize (scripts/release-build.sh) → draft release → appcast → publish.
+# Settings: scripts/release.env. Secrets: DEVELOPER_ID_P12_BASE64, DEVELOPER_ID_P12_PASSWORD,
+# ASC_KEY_P8, ASC_KEY_ID, ASC_ISSUER_ID, SPARKLE_PRIVATE_KEY, and LOCAL_XCCONFIG if release.env uses it.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to release again after a failed run, such as v1.2.0
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+# One release at a time, so a slower older run cannot overwrite a newer feed.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # The app builds with Xcode 27; GitHub's macos-26 image stops at Xcode 26.
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Full ref: a branch with the same name as the tag must not win.
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate
+        run: |
+          # "release not found" means none; any other error stops the run instead of skipping a check.
+          lookup() {
+            local out
+            if out=$(gh release view "$@" 2>&1); then printf '%s\n' "$out"
+            elif [[ "$out" != *"release not found"* ]]; then echo "::error::$out" >&2; return 1; fi
+          }
+          # No leading zeros: v01.2.3 and v1.2.3 would get the same build number.
+          [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo "::error::Tag must look like v1.2.3: $TAG"; exit 1; }
+          BUILD_NUMBER=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 + BASH_REMATCH[3] ))
+          VERSION="${TAG#v}"
+          [[ "$(git rev-parse HEAD)" == "$(git rev-parse "refs/tags/$TAG^{commit}")" ]] || { echo "::error::Checkout does not match $TAG"; exit 1; }
+          git merge-base --is-ancestor HEAD origin/main || { echo "::error::$TAG is not on main"; exit 1; }
+          DRAFT_STATE=$(lookup "$TAG" --json isDraft -q .isDraft)
+          [[ "$DRAFT_STATE" != false ]] || { echo "::error::$TAG is already published. Release a new patch version instead."; exit 1; }
+          LATEST=$(lookup --json tagName -q .tagName)
+          if [[ -n "$LATEST" ]]; then
+            NEWEST=$(printf '%s\n%s\n' "${LATEST#v}" "$VERSION" | sort -V | tail -1)
+            [[ "$NEWEST" == "$VERSION" && "${LATEST#v}" != "$VERSION" ]] || { echo "::error::$VERSION is not newer than $LATEST"; exit 1; }
+            # Releases made before this workflow may number builds differently; installed apps compare build numbers.
+            PREVIOUS_BUILD=$(gh release download "$LATEST" -p appcast.xml -O - 2>/dev/null \
+              | sed -nE 's|.*<sparkle:version>([^<]+)</sparkle:version>.*|\1|p' | head -1) || true
+            if [[ "$PREVIOUS_BUILD" =~ ^[0-9]+$ ]] && (( BUILD_NUMBER <= PREVIOUS_BUILD )); then
+              echo "::error::Build $BUILD_NUMBER is not above $LATEST's build $PREVIOUS_BUILD. Raise the major version."; exit 1
+            fi
+          fi
+          { echo "VERSION=$VERSION"; echo "OUT=$RUNNER_TEMP/out"; echo "DRAFT_STATE=${DRAFT_STATE:-none}"; } >> "$GITHUB_ENV"
+
+      - name: Restore git-ignored build config
+        env:
+          LOCAL_XCCONFIG: ${{ secrets.LOCAL_XCCONFIG }}
+        run: |
+          source scripts/release.env
+          [[ -n "$LOCAL_XCCONFIG_PATH" ]] || exit 0
+          [[ -n "$LOCAL_XCCONFIG" ]] || { echo "::error::LOCAL_XCCONFIG secret is empty"; exit 1; }
+          # The folder holds the tracked xcconfig that includes this file; a missing folder means a wrong path.
+          [[ -d "$(dirname "$LOCAL_XCCONFIG_PATH")" ]] || { echo "::error::No folder for $LOCAL_XCCONFIG_PATH"; exit 1; }
+          printf '%s\n' "$LOCAL_XCCONFIG" > "$LOCAL_XCCONFIG_PATH"
+          echo "Wrote $LOCAL_XCCONFIG_PATH"
+
+      - name: Build, sign and notarize
+        env:
+          P12_BASE64: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: bash scripts/release-build.sh
+
+      - name: Publish
+        run: |
+          source scripts/release.env
+          source "$OUT/build.env"
+          REPO="$GITHUB_REPOSITORY"
+          xml() { sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' <<< "$1"; }
+
+          # Notes: a draft written before tagging wins, otherwise commit subjects since the previous tag.
+          NOTES="$RUNNER_TEMP/notes.md"
+          : > "$NOTES"
+          if [[ "$DRAFT_STATE" == true ]]; then
+            gh release view "$TAG" --json body -q .body > "$NOTES"
+            gh release edit "$TAG" --title "$APP_NAME $VERSION"
+          else
+            PREVIOUS=$(git describe --tags --abbrev=0 "refs/tags/$TAG^" 2>/dev/null || true)
+            git log --no-merges --format='- %s' ${PREVIOUS:+"refs/tags/$PREVIOUS.."}"refs/tags/$TAG" > "$NOTES"
+            gh release create "$TAG" --draft --verify-tag --title "$APP_NAME $VERSION" --notes-file "$NOTES"
+          fi
+          gh release upload "$TAG" "$OUT/$ZIP_NAME" --clobber
+
+          if [[ "$FEED" == private ]]; then
+            # Private repos: the app downloads through the asset API with its token.
+            URL=$(gh api "repos/$REPO/releases" --paginate \
+              -q ".[] | select(.tag_name == \"$TAG\") | .assets[] | select(.name == \"$ZIP_NAME\") | .url")
+          else
+            URL="https://github.com/$REPO/releases/download/$TAG/$ZIP_NAME"
+          fi
+          [[ -n "$URL" ]] || { echo "::error::Uploaded asset not found"; exit 1; }
+
+          {
+            echo '<?xml version="1.0" encoding="utf-8"?>'
+            echo '<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">'
+            echo "  <channel>"
+            echo "    <title>$(xml "$APP_NAME")</title>"
+            echo "    <item>"
+            echo "      <title>$VERSION</title>"
+            echo "      <pubDate>$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')</pubDate>"
+            echo "      <sparkle:version>$BUILD_NUMBER</sparkle:version>"
+            echo "      <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>"
+            echo "      <sparkle:minimumSystemVersion>$MIN_SYSTEM</sparkle:minimumSystemVersion>"
+            echo "      <description sparkle:format=\"markdown\"><![CDATA["
+            sed 's/]]>/]]]]><![CDATA[>/g' "$NOTES"
+            echo "]]></description>"
+            echo "      <enclosure url=\"$URL\" type=\"application/octet-stream\" $SPARKLE_ATTRS />"
+            echo "    </item>"
+            echo "  </channel>"
+            echo "</rss>"
+          } > "$OUT/appcast.xml"
+          xmllint --noout "$OUT/appcast.xml"
+          # Kept on every release so a private feed can be restored by hand if the push below fails.
+          gh release upload "$TAG" "$OUT/appcast.xml" --clobber
+          gh release edit "$TAG" --draft=false --latest
+
+          if [[ "$FEED" == private ]]; then
+            # The appcast branch holds only the latest appcast.xml; the app reads it via raw.githubusercontent.com.
+            FEED_DIR=$(mktemp -d)
+            cp "$OUT/appcast.xml" "$FEED_DIR/"
+            git -C "$FEED_DIR" init -q -b appcast
+            git -C "$FEED_DIR" add appcast.xml
+            git -C "$FEED_DIR" -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "chore: $APP_NAME $VERSION appcast"
+            git -C "$FEED_DIR" push -q --force "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" appcast
+          fi
+          echo "Published https://github.com/$REPO/releases/tag/$TAG"
