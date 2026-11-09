@@ -43,7 +43,6 @@ enum Layout {
     /// Rows never get shorter than this; spare window height is shared equally between them.
     static let rowMinHeight: CGFloat = 56
     static let iconTileSize: CGFloat = 32
-    static let rowTitleWidth: CGFloat = 160
     static let scanningBarWidth: CGFloat = 160
     /// Row dividers start under the title, past the icon tile.
     static let rowDividerInset = cardPadding + iconTileSize + Spacing.m

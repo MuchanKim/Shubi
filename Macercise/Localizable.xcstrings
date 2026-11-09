@@ -311,38 +311,6 @@
         }
       }
     },
-    "100MB 이상" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "100 MB or Larger"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "100MB 이상"
-          }
-        }
-      }
-    },
-    "180일" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "180 Days"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "180일"
-          }
-        }
-      }
-    },
     "1GB 이상" : {
       "localizations" : {
         "en" : {
@@ -371,6 +339,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1년"
+          }
+        }
+      }
+    },
+    "7일 이상 미사용" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unused for 7+ Days"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7일 이상 미사용"
           }
         }
       }
@@ -423,38 +407,6 @@
         }
       }
     },
-    "500MB 이상" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "500 MB or Larger"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "500MB 이상"
-          }
-        }
-      }
-    },
-    "7일 이상 미사용" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unused for 7+ Days"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "7일 이상 미사용"
-          }
-        }
-      }
-    },
     "90일" : {
       "localizations" : {
         "en" : {
@@ -483,6 +435,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "90일 이상 미사용"
+          }
+        }
+      }
+    },
+    "100MB 이상" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "100 MB or Larger"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "100MB 이상"
+          }
+        }
+      }
+    },
+    "180일" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "180 Days"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "180일"
+          }
+        }
+      }
+    },
+    "500MB 이상" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "500 MB or Larger"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "500MB 이상"
           }
         }
       }
@@ -631,102 +631,6 @@
         }
       }
     },
-    "Playwright 브라우저" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Playwright Browsers"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Playwright 브라우저"
-          }
-        }
-      }
-    },
-    "Previews" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Previews"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Previews"
-          }
-        }
-      }
-    },
-    "Safari 캐시와 앱 컨테이너를 보려면 필요해요." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Needed to see Safari caches and app containers."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Safari 캐시와 앱 컨테이너를 보려면 필요해요."
-          }
-        }
-      }
-    },
-    "SwiftUI Preview 시뮬레이터" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SwiftUI Preview Simulators"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SwiftUI Preview 시뮬레이터"
-          }
-        }
-      }
-    },
-    "Xcode 빌드 데이터" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode build data"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 빌드 데이터"
-          }
-        }
-      }
-    },
-    "Xcode 아카이브" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode archive"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 아카이브"
-          }
-        }
-      }
-    },
     "iCloud" : {
       "localizations" : {
         "en" : {
@@ -775,6 +679,54 @@
         }
       }
     },
+    "Playwright 브라우저" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playwright Browsers"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playwright 브라우저"
+          }
+        }
+      }
+    },
+    "Previews" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previews"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previews"
+          }
+        }
+      }
+    },
+    "Safari 캐시와 앱 컨테이너를 보려면 필요해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needed to see Safari caches and app containers."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Safari 캐시와 앱 컨테이너를 보려면 필요해요."
+          }
+        }
+      }
+    },
     "simctl 결과를 읽지 못했어요" : {
       "localizations" : {
         "en" : {
@@ -787,6 +739,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "simctl 결과를 읽지 못했어요"
+          }
+        }
+      }
+    },
+    "SwiftUI Preview 시뮬레이터" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftUI Preview Simulators"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftUI Preview 시뮬레이터"
+          }
+        }
+      }
+    },
+    "Xcode 빌드 데이터" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode build data"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode 빌드 데이터"
+          }
+        }
+      }
+    },
+    "Xcode 아카이브" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode archive"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode 아카이브"
           }
         }
       }
@@ -871,6 +871,22 @@
         }
       }
     },
+    "그 외 사용 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other data %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "그 외 사용 %@"
+          }
+        }
+      }
+    },
     "기간" : {
       "localizations" : {
         "en" : {
@@ -947,6 +963,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "남은 데이터"
+          }
+        }
+      }
+    },
+    "남음 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "남음 %@"
           }
         }
       }
@@ -1303,6 +1335,22 @@
         }
       }
     },
+    "디스크의 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of the disk"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "디스크의 %@"
+          }
+        }
+      }
+    },
     "라이트" : {
       "localizations" : {
         "en" : {
@@ -1427,6 +1475,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "명령이 실패했어요 (종료 코드 %d)"
+          }
+        }
+      }
+    },
+    "모두 정리하고 휴지통을 비우면 약 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About %@ once cleaned and the Trash emptied"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모두 정리하고 휴지통을 비우면 약 %@"
           }
         }
       }
@@ -1571,6 +1635,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "브라우저 캐시 폴더"
+          }
+        }
+      }
+    },
+    "비우기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "비우기"
+          }
+        }
+      }
+    },
+    "비우면 바로 공간이 생겨요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emptying it frees up space right away"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "비우면 바로 공간이 생겨요"
           }
         }
       }
@@ -2719,6 +2815,22 @@
         }
       }
     },
+    "정리 가능" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reclaimable"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "정리 가능"
+          }
+        }
+      }
+    },
     "정리 명령" : {
       "localizations" : {
         "en" : {
@@ -3151,6 +3263,38 @@
         }
       }
     },
+    "휴지통" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trash"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴지통"
+          }
+        }
+      }
+    },
+    "휴지통 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trash %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴지통 %@"
+          }
+        }
+      }
+    },
     "휴지통 비우기" : {
       "localizations" : {
         "en" : {
@@ -3163,22 +3307,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "휴지통 비우기"
-          }
-        }
-      }
-    },
-    "휴지통 비우기 · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empty Trash · %@"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "휴지통 비우기 · %@"
           }
         }
       }
