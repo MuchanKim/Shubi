@@ -29,7 +29,7 @@
 
 Shubi scans the places where a Mac quietly fills up — Xcode build data, simulators, browser and app caches, package manager downloads, old logs, data left behind by deleted apps — and shows how much each one costs. One tap on **Smart Clean** removes what apps rebuild on their own; everything else is listed for you to review.
 
-The name comes from the Korean *shu~ biwoda*: "swoosh, empty it."
+Why Shubi? Its maker loves the Shrimp Beef Burger at McDonald's Korea, known there as the *Shubi* burger.
 
 ## See it in action
 
