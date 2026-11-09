@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MuchanKim/Shubi/releases"><img src="https://img.shields.io/badge/Version-1.0-007EC6?style=flat&amp;logo=github&amp;logoColor=white" alt="App version 1.0"></a>
+  <a href="https://github.com/MuchanKim/Shubi/releases"><img src="https://img.shields.io/github/v/release/MuchanKim/Shubi?style=flat&amp;logo=github&amp;logoColor=white&amp;label=Version&amp;color=007EC6" alt="Latest version"></a>
   <a href="#download"><img src="https://img.shields.io/badge/macOS-26%2B-000000?style=flat&amp;logo=apple&amp;logoColor=white" alt="Requires macOS 26 or later"></a>
   <a href="#build-from-source"><img src="https://img.shields.io/badge/Swift-6-F05138?style=flat&amp;logo=swift&amp;logoColor=white" alt="Swift 6"></a>
   <a href="https://github.com/airbnb/lottie-spm"><img src="https://img.shields.io/badge/Lottie-4.6.1-00DDB3?style=flat" alt="Lottie 4.6.1 dependency"></a>
@@ -70,7 +70,7 @@ A cleaner earns trust by what it leaves alone.
 
 **Requires macOS 26 or later.**
 
-Check [GitHub Releases](https://github.com/MuchanKim/Shubi/releases) for notarized builds. The first release is being prepared; you can [build from source](#build-from-source) in the meantime.
+Download the latest notarized build from [GitHub Releases](https://github.com/MuchanKim/Shubi/releases/latest), unzip it and move Shubi to Applications. Shubi checks for updates once a day; **Check for Updates…** in the app menu checks now.
 
 Full Disk Access is optional. Without it, Safari's caches and sandboxed apps' containers aren't scanned; the sidebar shows how to grant it.
 
