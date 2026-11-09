@@ -90,12 +90,7 @@ private struct SidebarRow: View {
     var body: some View {
         Button(action: select) {
             HStack(spacing: Layout.Spacing.s) {
-                Image(systemName: section.icon)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: Layout.sidebarTileSize, height: Layout.sidebarTileSize)
-                    .background(section.tint.gradient, in: .rect(cornerRadius: 6))
-                    .accessibilityHidden(true)
+                SymbolTile(systemName: section.icon, tint: section.tint)
                 Text(section.title)
                     .fontWeight(isSelected ? .semibold : .regular)
                     .lineLimit(1)
@@ -131,5 +126,21 @@ private struct SidebarRow: View {
         } else if isHovered {
             shape.fill(.fill.quaternary)
         }
+    }
+}
+
+/// A white symbol on a tile of its tint's gradient: the app's icon style, in the sidebar and on the summary.
+struct SymbolTile: View {
+    let systemName: String
+    let tint: Color
+    var size = Layout.sidebarTileSize
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: size / 2, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: size, height: size)
+            .background(tint.gradient, in: .rect(cornerRadius: size * 6 / 22))
+            .accessibilityHidden(true)
     }
 }
