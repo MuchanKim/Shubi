@@ -31,14 +31,15 @@ enum Theme: String, CaseIterable, Identifiable {
         UserDefaults.standard.string(forKey: storageKey).flatMap(Theme.init) ?? .default
     }
 
-    /// Pastel light background: mint, sky and lavender around a white center, so text keeps its light-mode contrast.
+    /// Pastel light background, faint enough that the summary's water stays the most colorful thing on screen:
+    /// mint, sky and lavender around a white center, so text keeps its light-mode contrast.
     static let auroraGradient = MeshGradient(
         width: 3, height: 3,
         points: [[0, 0], [0.5, 0], [1, 0], [0, 0.5], [0.6, 0.45], [1, 0.5], [0, 1], [0.5, 1], [1, 1]],
         colors: [
-            Color(red: 0.80, green: 0.95, blue: 0.91), Color(red: 0.82, green: 0.90, blue: 1.00), Color(red: 0.90, green: 0.85, blue: 1.00),
-            Color(red: 0.84, green: 0.93, blue: 1.00), .white, Color(red: 0.97, green: 0.88, blue: 0.96),
-            Color(red: 0.88, green: 0.86, blue: 1.00), Color(red: 1.00, green: 0.90, blue: 0.86), Color(red: 0.86, green: 0.95, blue: 0.93),
+            Color(red: 0.89, green: 0.97, blue: 0.95), Color(red: 0.90, green: 0.95, blue: 1.00), Color(red: 0.95, green: 0.92, blue: 1.00),
+            Color(red: 0.91, green: 0.96, blue: 1.00), .white, Color(red: 0.98, green: 0.93, blue: 0.98),
+            Color(red: 0.93, green: 0.92, blue: 1.00), Color(red: 1.00, green: 0.95, blue: 0.92), Color(red: 0.92, green: 0.97, blue: 0.96),
         ]
     )
 }
