@@ -6,6 +6,8 @@ struct SummaryView: View {
 
     @State private var results: [SidebarSection: SectionScan] = [:]
     @State private var disk: (total: Int64, available: Int64)?
+    /// Smart Clean's running total when `disk` was read: only what's freed after that is missing from it.
+    @State private var freedAtMeasure: Int64 = 0
     @State private var reloadCount = 0
     @State private var showsSmartCleanInfo = false
     /// nil when the Trash can't be read without Full Disk Access.
@@ -117,8 +119,11 @@ struct SummaryView: View {
             ZStack {
                 let used = disk.map { Double($0.total - $0.available) / Double(max($0.total, 1)) }
                 // While scanning, the water rises with each finished scan and reaches the real level when the scan ends.
-                let level = (used ?? 0) * (isScanning && fillsTankWhileScanning ? scanProgress : 1)
-                DiskTank(fraction: used, level: level, palette: palette)
+                // While Smart Clean deletes, the water drops by what's gone so far, ahead of the next disk reading.
+                let freed = disk.map { Double(Cleanup.shared.smartCleanFreed - freedAtMeasure) / Double(max($0.total, 1)) } ?? 0
+                let level = Cleanup.shared.isSmartCleaning ? max(0, (used ?? 0) - freed)
+                    : (used ?? 0) * (isScanning && fillsTankWhileScanning ? scanProgress : 1)
+                DiskTank(fraction: used, level: level, palette: palette, isChurning: Cleanup.shared.isSmartCleaning)
                     .id(tankFill)
                 smartCleanCenter
                     // Once the water covers the middle, the text sits on the water, not on the glass and the window behind it.
@@ -160,7 +165,9 @@ struct SummaryView: View {
 
     @ViewBuilder private var smartCleanCenter: some View {
         let items = smartCleanItems
-        let total = items.reduce(0) { $0 + $1.size }
+        let cleaning = Cleanup.shared.isSmartCleaning
+        // While Smart Clean deletes, what's left of it, counting down.
+        let total = cleaning ? Cleanup.shared.smartCleanLeft ?? items.reduce(0) { $0 + $1.size } : items.reduce(0) { $0 + $1.size }
         VStack(spacing: Layout.Spacing.s) {
             if !isScanning, items.isEmpty, results.values.contains(where: \.failed) {
                 // Nothing found, but a failed scan may have missed some: not a clean bill of health.
@@ -181,8 +188,10 @@ struct SummaryView: View {
                         .contentTransition(.numericText(value: Double(total)))
                         .animation(reduceMotion ? nil : .smooth, value: total)
                     HStack(spacing: Layout.Spacing.xs) {
-                        Text("안전하게 비울 수 있어요")
+                        Text(cleaning ? "비우는 중…" : "안전하게 비울 수 있어요")
                         Button("스마트 정리 설명", systemImage: "info.circle") { showsSmartCleanInfo.toggle() }
+                            .opacity(cleaning ? 0 : 1)
+                            .disabled(cleaning)
                             .labelStyle(.iconOnly)
                             .buttonStyle(.plain)
                             .help(Self.smartCleanInfo)
@@ -198,7 +207,10 @@ struct SummaryView: View {
                 }
                 .accessibilityRepresentation {
                     // VoiceOver still hears a progress indicator, which the screen shows only as water.
-                    if isScanning {
+                    if cleaning {
+                        ProgressView { Text("비우는 중…") }
+                            .accessibilityValue(Text(amount))
+                    } else if isScanning {
                         ProgressView(value: scanProgress) { Text(amount) }
                             .accessibilityHint("안전하게 비울 수 있어요")
                     } else {
@@ -212,9 +224,9 @@ struct SummaryView: View {
                     .focused($isSmartCleanFocused)
                     .focusEffectDisabled()
                     // Kept in the layout while scanning, so the total doesn't jump when the button appears.
-                    .opacity(isScanning ? 0 : 1)
+                    .opacity(isScanning || cleaning ? 0 : 1)
                     .disabled(isScanning || Cleanup.shared.isRunning)
-                    .accessibilityHidden(isScanning)
+                    .accessibilityHidden(isScanning || cleaning)
             }
         }
     }
@@ -302,6 +314,7 @@ struct SummaryView: View {
         let values = try? URL(filePath: "/").resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey])
         if let total = values?.volumeTotalCapacity, let available = values?.volumeAvailableCapacityForImportantUsage {
             disk = (Int64(total), available)
+            freedAtMeasure = Cleanup.shared.smartCleanFreed
         }
         let trash = await LibraryScanner.trashSize()
         // A rescan during the measurement has started a newer task, whose size must not be overwritten by this one's.

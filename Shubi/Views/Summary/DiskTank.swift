@@ -8,6 +8,8 @@ struct DiskTank: View {
     /// Where the water is drawn (0 empty, 1 full): the used fraction, or less while a scan fills it.
     let level: Double
     let palette: ThemePalette
+    /// Keeps the waves moving while the app works on the disk, even when the level hardly changes.
+    var isChurning = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var water = Water()
@@ -26,7 +28,7 @@ struct DiskTank: View {
                 // Frames 0…116 loop the waves seamlessly; the code, not the timeline, sets how high they are.
                 // Resting ends on frame 116, the loop's seam, so waving again from frame 0 doesn't jump.
                 .playbackMode(reduceMotion ? .paused(at: .frame(0))
-                              : .playing(isWaving ? .fromFrame(0, toFrame: 116, loopMode: .loop) : .fromFrame(nil, toFrame: 116, loopMode: .playOnce)))
+                              : .playing(isWaving || isChurning ? .fromFrame(0, toFrame: 116, loopMode: .loop) : .fromFrame(nil, toFrame: 116, loopMode: .playOnce)))
                 // A paused animation never asks the closures again, so under Reduce Motion a new level arrives as a new provider.
                 .valueProvider(reduceMotion ? PointValueProvider(TankMotion.frontWave.position(forLevel: level)) : water.front,
                                for: "Shape Layer 2.Transform.Position")
