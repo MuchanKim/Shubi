@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/media/app-icon.png" width="128" height="128" alt="Shubi app icon: aurora-coloured water low in a glass orb">
+</p>
+
 <h1 align="center">Shubi</h1>
 
 <p align="center">

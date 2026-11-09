@@ -346,6 +346,7 @@
 		D19DA3B32F66E8B000832E48 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Shubi.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -378,6 +379,7 @@
 		D19DA3B42F66E8B000832E48 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Shubi.entitlements;
 				CODE_SIGN_STYLE = Automatic;
