@@ -52,5 +52,6 @@ enum Layout {
     static let themeSwatchHeight: CGFloat = 48
 
     static let sheetWidth: CGFloat = 512
+    static let popoverWidth: CGFloat = 240
     static let sheetListHeight: CGFloat = 240
 }

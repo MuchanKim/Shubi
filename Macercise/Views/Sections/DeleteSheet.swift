@@ -5,14 +5,10 @@ import SwiftUI
 struct DeleteTargets: Identifiable {
     let id = UUID()
     let items: [ScanItem]
-    /// Some scans failed, so items they would have found aren't in `items`.
-    var missesFailedScans = false
 }
 
 struct DeleteSheet: View {
     let items: [ScanItem]
-    /// Some scans failed, so items they would have found aren't in `items`.
-    var missesFailedScans = false
     let onDeleted: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -31,11 +27,6 @@ struct DeleteSheet: View {
                     Text("합계 \(items.reduce(0) { $0 + $1.size }.formatted(.byteCount(style: .file).locale(.shown)))")
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
-                    if missesFailedScans {
-                        Label("일부 항목을 스캔하지 못해 목록에서 빠졌어요", systemImage: "exclamationmark.triangle")
-                            .font(.callout)
-                            .foregroundStyle(.orange)
-                    }
                 }
             } else {
                 // The caller rescans after a delete, so `items` may already be the new scan here.

@@ -1,25 +1,5 @@
 import SwiftUI
 
-@main
-struct MacerciseApp: App {
-    init() {
-        NSApplication.shared.appearance = Theme.saved.appearance
-    }
-
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .frame(minWidth: Layout.windowMinWidth, minHeight: Layout.windowMinHeight)
-        }
-        .defaultSize(width: Layout.windowDefaultWidth, height: Layout.windowDefaultHeight)
-        .windowResizability(.contentMinSize)
-
-        Settings {
-            SettingsView()
-        }
-    }
-}
-
 enum SidebarSection: CaseIterable, Identifiable {
     case summary, developer, browser, appCache, orphanedData, packageCache, logs, old, large
 
@@ -94,6 +74,12 @@ struct ContentView: View {
                 }
             }
             .navigationTitle(section?.title ?? "Macercise")
+        }
+        // Here, not on the summary: the user may have left it while the clean ran.
+        .alert(Text("\(SmartCleanRun.shared.failures.count)개 항목을 지우지 못했어요"),
+               isPresented: Binding { !SmartCleanRun.shared.failures.isEmpty } set: { if !$0 { SmartCleanRun.shared.failures = [] } }) {
+        } message: {
+            Text(verbatim: SmartCleanRun.shared.failures.map { "\($0.url.path(percentEncoded: false)): \($0.reason)" }.joined(separator: "\n"))
         }
         // `Text` follows this; strings looked up in code redraw through `ShownLanguage.track()`.
         .environment(\.locale, ShownLanguage.shared.locale)

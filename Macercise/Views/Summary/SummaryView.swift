@@ -1,4 +1,3 @@
-import Lottie
 import SwiftUI
 
 /// Disk usage, the smart clean action, and how much each cleanup section could free, measured by running every scanner.
@@ -8,8 +7,7 @@ struct SummaryView: View {
     @State private var results: [SidebarSection: SectionScan] = [:]
     @State private var disk: (total: Int64, available: Int64)?
     @State private var reloadCount = 0
-    @State private var smartCleanTargets: DeleteTargets?
-    @State private var opensSmartCleanAfterScan = false
+    @State private var showsSmartCleanInfo = false
     /// nil when the Trash can't be read without Full Disk Access.
     @State private var trashSize: Int64?
     @State private var confirmEmptyTrash = false
@@ -61,9 +59,6 @@ struct SummaryView: View {
         .toolbar {
             Button("다시 스캔", systemImage: "arrow.clockwise") { rescan() }
         }
-        .sheet(item: $smartCleanTargets) { targets in
-            DeleteSheet(items: targets.items, missesFailedScans: targets.missesFailedScans, onDeleted: { rescan(fillingTank: false) })
-        }
         .confirmationDialog("휴지통을 비울까요?", isPresented: $confirmEmptyTrash) {
             Button("휴지통 비우기", role: .destructive, action: emptyTrash)
         } message: {
@@ -75,6 +70,8 @@ struct SummaryView: View {
         }
         // A language change scans again without draining the tank: the item names inside are words.
         .onChange(of: ShownLanguage.shared.locale) { reloadCount += 1 }
+        // After a clean, wherever it was started from: the summary shows the space it freed.
+        .onChange(of: SmartCleanRun.shared.finished) { rescan(fillingTank: false) }
         .task(id: reloadCount) {
             await measureDisk()
             // A rescan during the measurement has started a newer task; this one must not reset its count.
@@ -108,12 +105,6 @@ struct SummaryView: View {
                     failed.forEach { ScanCache.shared.invalidate(sources[$0].0) }
                     results[section] = SectionScan(items: landed[done.index].flatMap { $0 ?? [] }, failed: !failed.isEmpty)
                 }
-            }
-            guard !Task.isCancelled else { return }
-            if opensSmartCleanAfterScan {
-                opensSmartCleanAfterScan = false
-                let items = smartCleanItems
-                smartCleanTargets = items.isEmpty ? nil : DeleteTargets(items: items, missesFailedScans: results.values.contains(where: \.failed))
             }
         }
     }
@@ -190,7 +181,21 @@ struct SummaryView: View {
                         .monospacedDigit()
                         .contentTransition(.numericText(value: Double(total)))
                         .animation(reduceMotion ? nil : .smooth, value: total)
-                    Text("안전하게 비울 수 있어요").font(.caption).foregroundStyle(.primary.opacity(0.75))
+                    HStack(spacing: Layout.Spacing.xs) {
+                        Text("안전하게 비울 수 있어요")
+                        Button("스마트 정리 설명", systemImage: "info.circle") { showsSmartCleanInfo.toggle() }
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.plain)
+                            .help(Self.smartCleanInfo)
+                            .popover(isPresented: $showsSmartCleanInfo) {
+                                Text(Self.smartCleanInfo)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .frame(width: Layout.popoverWidth)
+                                    .padding(Layout.Spacing.m)
+                            }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.primary.opacity(0.75))
                 }
                 .accessibilityRepresentation {
                     // VoiceOver still hears a progress indicator, which the screen shows only as water.
@@ -200,16 +205,16 @@ struct SummaryView: View {
                     } else {
                         VStack { Text(amount); Text("안전하게 비울 수 있어요") }
                             .accessibilityElement(children: .combine)
+                            .accessibilityHint(Self.smartCleanInfo)
                     }
                 }
                 Button("스마트 정리", action: smartClean)
                     .buttonStyle(TankButtonStyle(ink: palette.ink, isFocused: isSmartCleanFocused))
                     .focused($isSmartCleanFocused)
                     .focusEffectDisabled()
-                    .help("다시 만들어지는 캐시와 빌드 데이터, 쓸 수 없게 된 시뮬레이터만 지워요. 실행 중인 앱의 캐시와 내 파일은 그대로 둬요.")
                     // Kept in the layout while scanning, so the total doesn't jump when the button appears.
                     .opacity(isScanning ? 0 : 1)
-                    .disabled(isScanning)
+                    .disabled(isScanning || SmartCleanRun.shared.isCleaning)
                     .accessibilityHidden(isScanning)
             }
         }
@@ -314,19 +319,16 @@ struct SummaryView: View {
         }
     }
 
-    /// Rescans first: what was idle or uninstalled at the last scan may be in use now.
-    private func smartClean() {
-        rescan()
-        opensSmartCleanAfterScan = true
-    }
+    static let smartCleanInfo: LocalizedStringKey = "앱이 다시 만드는 캐시와 빌드 데이터, 쓸 수 없는 시뮬레이터만 바로 지워요. 실행 중인 앱의 캐시와 내 파일은 그대로 둬요."
+
+    /// No confirmation: it only takes what apps make again.
+    private func smartClean() { SmartCleanRun.shared.start(scans: Self.scanned.flatMap(\.1)) }
 
     /// `fillingTank`: the water drains and rises again as sections finish, to show the scan working.
     /// Off after a cleanup, so the water goes straight to the new level instead of refilling.
     private func rescan(fillingTank: Bool = true) {
         fillsTankWhileScanning = fillingTank
         if fillingTank { tankFill += 1 }
-        // A plain rescan must not open the sheet a pending smart clean asked for.
-        opensSmartCleanAfterScan = false
         ScanCache.shared.invalidateAll()
         results = [:]
         finishedScans = 0
@@ -340,215 +342,6 @@ private struct SectionScan {
     let failed: Bool
 
     var size: Int64 { items.reduce(0) { $0 + $1.size } }
-}
-
-/// The disk split for the summary's bar: what each finished section could free, the rest of the used space, and free space.
-struct DiskBreakdown {
-    /// Finished sections' reclaimable sizes, in display order.
-    let sections: [(section: SidebarSection, size: Int64)]
-    /// nil when the disk size couldn't be read: there's no bar then.
-    let disk: (total: Int64, available: Int64)?
-
-    var reclaimable: Int64 { sections.reduce(0) { $0 + $1.size } }
-    /// Clamped: the scanned sizes can add up to more than the volume reports as used, with clones or purgeable space.
-    var otherUsed: Int64 { disk.map { max(0, $0.total - $0.available - reclaimable) } ?? 0 }
-
-    /// `size` as a fraction of the bar, which spans the disk, or more when the scans overshoot its used space, so nothing overflows.
-    func fractionOfBar(_ size: Int64) -> Double {
-        guard let disk else { return 0 }
-        return Double(size) / Double(max(disk.total, reclaimable + disk.available, 1))
-    }
-
-    /// `size` as a fraction of the disk's real capacity, for the figures shown in words; nil without a capacity to divide by.
-    func fractionOfDisk(_ size: Int64) -> Double? {
-        guard let disk, disk.total > 0 else { return nil }
-        return Double(size) / Double(disk.total)
-    }
-
-    /// The used fraction left with everything reclaimable cleaned up. nil with nothing to clean, without the disk size,
-    /// or when the scans count more than the disk reports as used (clones, purgeable space): there's no honest estimate then.
-    var cleanedLevel: Double? {
-        guard let disk, reclaimable > 0, reclaimable <= disk.total - disk.available else { return nil }
-        return fractionOfDisk(otherUsed)
-    }
-
-    /// A section's part of everything reclaimable.
-    func share(_ size: Int64) -> Double { reclaimable > 0 ? Double(size) / Double(reclaimable) : 0 }
-}
-
-/// The whole disk in one bar: the reclaimable space in the accent, the rest of the used space, then free space.
-/// One block, not one per section: the list below it already splits the reclaimable space.
-private struct DiskBar: View {
-    let split: DiskBreakdown
-    let reclaimableFill: Color
-
-    static let otherFill = Color.secondary.opacity(0.3)
-    static let freeFill = Color.secondary.opacity(0.12)
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        GeometryReader { proxy in
-            let width = proxy.size.width
-            HStack(spacing: 0) {
-                Rectangle().fill(reclaimableFill).frame(width: width * split.fractionOfBar(split.reclaimable))
-                Rectangle().fill(Self.otherFill).frame(width: width * split.fractionOfBar(split.otherUsed))
-            }
-        }
-        .frame(height: Layout.Spacing.m)
-        .background(Self.freeFill)
-        .clipShape(.rect(cornerRadius: Layout.Spacing.xs))
-        .animation(reduceMotion ? nil : .smooth, value: split.reclaimable)
-        // The header and the legend say the same in words.
-        .accessibilityHidden(true)
-    }
-}
-
-/// Disk usage as water in a glass orb: the fuller the disk, the higher the water.
-private struct DiskTank: View {
-    /// The disk's used fraction, for accessibility; nil until the disk size is read.
-    let fraction: Double?
-    /// Where the water is drawn (0 empty, 1 full): the used fraction, or less while a scan fills it.
-    let level: Double
-    let palette: ThemePalette
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var water = Water()
-    /// Off a few seconds after the water stops: the waves finish their cycle and rest, so an idle summary draws nothing.
-    @State private var isWaving = true
-
-    var body: some View {
-        // "water filling Glass orb" by Aneesh Ravi, LottieFiles, Lottie Simple License (https://lottiefiles.com/page/license),
-        // split in two files: the waves, and the glass drawn over them.
-        ZStack {
-            LottieView(animation: .named("DiskTank"))
-                // The Core Animation engine ignores closure value providers, and the water's height is one.
-                .configuration(LottieConfiguration(renderingEngine: .mainThread))
-                // Drawn on the CPU every frame, so no more often than the asset's own 30 fps.
-                .configure(\.respectAnimationFrameRate, to: true)
-                // Frames 0…116 loop the waves seamlessly; the code, not the timeline, sets how high they are.
-                // Resting ends on frame 116, the loop's seam, so waving again from frame 0 doesn't jump.
-                .playbackMode(reduceMotion ? .paused(at: .frame(0))
-                              : .playing(isWaving ? .fromFrame(0, toFrame: 116, loopMode: .loop) : .fromFrame(nil, toFrame: 116, loopMode: .playOnce)))
-                // A paused animation never asks the closures again, so under Reduce Motion a new level arrives as a new provider.
-                .valueProvider(reduceMotion ? PointValueProvider(TankMotion.frontWave.position(forLevel: level)) : water.front,
-                               for: "Shape Layer 2.Transform.Position")
-                .valueProvider(reduceMotion ? PointValueProvider(TankMotion.backWave.position(forLevel: level)) : water.back,
-                               for: "Shape Layer 6.Transform.Position")
-                .valueProvider(GradientValueProvider(palette.water.map { $0.lottie() }), for: "Shape Layer 2.Rectangle 1.Gradient Fill 1.Colors")
-                .valueProvider(GradientValueProvider(palette.backWater.map { $0.lottie() }), for: "Shape Layer 6.Rectangle 1.Gradient Fill 1.Colors")
-            // Static, and on the default engine: the main-thread one drops gradients with transparency, which is all the glass is.
-            LottieView(animation: .named("DiskTankGlass"))
-                // The asset's rim is near-black; the palette's is light, as if part of the window.
-                .valueProvider(GradientValueProvider(palette.glass.map { $0.lottie() }, locations: ThemePalette.glassStops),
-                               for: "Shape Layer 1.Ellipse 1.Gradient Fill 1.Colors")
-        }
-        // The canvas is 307×283 around a 250-point orb: drawn this large, the orb itself fills the ring's size,
-        // and only the canvas's empty margins spill past it.
-        .frame(width: Layout.ringSize * 307 / 250, height: Layout.ringSize * 283 / 250)
-        .frame(width: Layout.ringSize, height: Layout.ringSize)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("디스크 사용률")
-        .accessibilityValue(fraction.map { $0.formatted(.percent.precision(.fractionLength(0)).locale(.shown)) } ?? "")
-        // A new view starts its water at the bottom.
-        .onAppear { water.move = water.move.retargeted(to: level, at: .now) }
-        .onChange(of: level) { _, new in water.move = water.move.retargeted(to: new, at: .now) }
-        .task(id: level) {
-            isWaving = true
-            // The longest move, then a moment to settle.
-            try? await Task.sleep(for: .seconds(TankMotion.fullRangeDuration + 2))
-            if !Task.isCancelled { isWaving = false }
-        }
-    }
-}
-
-/// The water's current move, read by Lottie on every frame: the drawn water is wherever the move has it at that moment.
-private final class Water {
-    var move = TankMotion.Move(from: 0, to: 0, start: .distantPast, duration: 0)
-    lazy var front = provider(for: TankMotion.frontWave)
-    lazy var back = provider(for: TankMotion.backWave)
-
-    private func provider(for wave: TankMotion.Wave) -> PointValueProvider {
-        // Weak: the animation view can draw a last frame after this view's state is gone.
-        PointValueProvider { [weak self] _ in wave.position(forLevel: self?.move.level(at: .now) ?? 0) }
-    }
-}
-
-/// How `DiskTank` places and moves its water.
-nonisolated enum TankMotion {
-    /// Even a 1%p change takes this long, so the water is seen to move.
-    static let minimumDuration: TimeInterval = 1
-    /// Filling the orb from empty to full takes this long; a longer move takes its share of it.
-    static let fullRangeDuration: TimeInterval = 2
-
-    /// The water moving from one level to another, easing to a stop.
-    struct Move: Equatable {
-        var from: Double
-        var to: Double
-        var start: Date
-        var duration: TimeInterval
-        /// Level per second at `start`, carried over from the move this one replaced: scans landing a moment apart
-        /// would otherwise stop the water dead each time, and it would fall far behind.
-        var velocity: Double = 0
-
-        /// Where the water is at `time`.
-        func level(at time: Date) -> Double {
-            let t = progress(at: time)
-            guard t < 1 else { return to }
-            // Cubic Hermite: leaves `from` at `velocity` and arrives at `to` at rest.
-            return from + (to - from) * t * t * (3 - 2 * t) + velocity * duration * t * (1 - t) * (1 - t)
-        }
-
-        func velocity(at time: Date) -> Double {
-            let t = progress(at: time)
-            guard t < 1 else { return 0 }
-            return 6 * (to - from) * t * (1 - t) / duration + velocity * (1 - t) * (1 - 3 * t)
-        }
-
-        /// A move to `level` from wherever the water is at `time`, at the speed it has there, so it never jumps or stops dead.
-        func retargeted(to level: Double, at time: Date) -> Move {
-            let here = self.level(at: time)
-            let change = level - here
-            let duration = max(TankMotion.minimumDuration, abs(change) * TankMotion.fullRangeDuration)
-            // Only speed toward the new level carries over, and at most 3× the average: any faster and the water overshoots.
-            let carried = change == 0 ? 0 : min(max(velocity(at: time) * duration / change, 0), 3)
-            return Move(from: here, to: level, start: time, duration: duration, velocity: carried * change / duration)
-        }
-
-        private func progress(at time: Date) -> Double { duration > 0 ? min(max(time.timeIntervalSince(start) / duration, 0), 1) : 1 }
-    }
-
-    /// A wave layer's designed path: at `empty` on frame 0, at `full` on frame 122.
-    struct Wave {
-        let empty: CGPoint
-        let full: CGPoint
-
-        /// On its own path, so the two waves keep the designer's offset at every level.
-        func position(forLevel level: Double) -> CGPoint {
-            let t = TankMotion.pathFraction(forLevel: level)
-            return CGPoint(x: empty.x + (full.x - empty.x) * t, y: empty.y + (full.y - empty.y) * t)
-        }
-    }
-
-    static let frontWave = Wave(empty: CGPoint(x: 392, y: 351), full: CGPoint(x: -118, y: 71))
-    static let backWave = Wave(empty: CGPoint(x: 222, y: 351), full: CGPoint(x: -128, y: 71))
-
-    /// How far along its path a wave sits at `level` (0 empty, 1 full) of the orb. From the asset: the orb spans y 16…266,
-    /// and a wave's mean surface sits 63 above its layer position, its rounded crests 16 higher still.
-    /// Empty keeps the crests just below the orb; full puts the mean surface at its top.
-    static func pathFraction(forLevel level: Double) -> Double {
-        let empty = 266 + 63 + 16.0, full = 16 + 63.0
-        let y = empty - (empty - full) * min(max(level, 0), 1)
-        return (351 - y) / (351 - 71)
-    }
-}
-
-private extension Color {
-    /// Lottie takes its own color type. The palette's colors are fixed RGB, so a default environment resolves them.
-    func lottie() -> LottieColor {
-        let resolved = resolve(in: EnvironmentValues())
-        return LottieColor(r: Double(resolved.red), g: Double(resolved.green), b: Double(resolved.blue), a: Double(resolved.opacity))
-    }
 }
 
 /// A white pill in the water's color, instead of a system-blue button that ignores the bowl.

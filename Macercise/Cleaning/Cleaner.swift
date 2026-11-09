@@ -86,7 +86,7 @@ nonisolated enum Cleaner {
             } catch where isPermissionError(error) {
                 // Apps installed by the App Store or an installer are owned by root; Finder asks for the admin password.
                 guard mode == .trash else {
-                    return Failure(url: url, reason: String(localized: "관리자 권한이 필요해요. '휴지통으로 이동'을 고르면 암호를 입력해 지울 수 있어요.", bundle: .shown, locale: .shown))
+                    return Failure(url: url, reason: String(localized: "관리자 권한이 필요해요. 해당 항목 화면에서 '휴지통으로 이동'을 고르면 암호를 입력해 지울 수 있어요.", bundle: .shown, locale: .shown))
                 }
                 let script = "tell application \"Finder\" to delete (POSIX file \(appleScriptString(url.path(percentEncoded: false))) as alias)"
                 return run("/usr/bin/osascript -e \(shellQuote(script))").map { Failure(url: url, reason: $0) }

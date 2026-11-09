@@ -127,10 +127,13 @@ struct ItemTable<Key: Hashable>: View {
                 reloadCount += 1
             }
         }
-        // Restarted, and the superseded scan's result dropped, by any change of the key, a reload or the language.
-        .task(id: ScanTrigger(key: scanKey, reload: reloadCount, language: ShownLanguage.shared.locale.identifier)) {
-            let trigger = ScanTrigger(key: scanKey, reload: reloadCount, language: ShownLanguage.shared.locale.identifier)
-            // A language change scans again in place: the list keeps its selection and sort, and only the words change.
+        // Restarted, and the superseded scan's result dropped, by a change of the key, a reload, the language or a smart clean.
+        .task(id: ScanTrigger(key: scanKey, reload: reloadCount, language: ShownLanguage.shared.locale.identifier,
+                              cleaned: SmartCleanRun.shared.finished)) {
+            let trigger = ScanTrigger(key: scanKey, reload: reloadCount, language: ShownLanguage.shared.locale.identifier,
+                                      cleaned: SmartCleanRun.shared.finished)
+            // A language change or a smart clean scans again in place: the list keeps its selection and sort,
+            // and loses only what was deleted.
             let inPlace = loaded.map { $0.key == trigger.key && $0.reload == trigger.reload } ?? false
             if !inPlace {
                 // Clear the previous scan's list, so its selection can't be deleted while this one runs.
@@ -168,4 +171,5 @@ private struct ScanTrigger<Key: Hashable>: Equatable {
     let key: Key
     let reload: Int
     let language: String
+    let cleaned: Int
 }
