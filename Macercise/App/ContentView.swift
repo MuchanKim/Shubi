@@ -76,10 +76,10 @@ struct ContentView: View {
             .navigationTitle(section?.title ?? "Macercise")
         }
         // Here, not on the summary: the user may have left it while the clean ran.
-        .alert(Text("\(SmartCleanRun.shared.failures.count)개 항목을 지우지 못했어요"),
-               isPresented: Binding { !SmartCleanRun.shared.failures.isEmpty } set: { if !$0 { SmartCleanRun.shared.failures = [] } }) {
+        .alert(Text("\(Cleanup.shared.smartCleanFailures.count)개 항목을 지우지 못했어요"),
+               isPresented: Binding { !Cleanup.shared.smartCleanFailures.isEmpty } set: { if !$0 { Cleanup.shared.smartCleanFailures = [] } }) {
         } message: {
-            Text(verbatim: SmartCleanRun.shared.failures.map { "\($0.url.path(percentEncoded: false)): \($0.reason)" }.joined(separator: "\n"))
+            Text(verbatim: Cleanup.shared.smartCleanFailures.map { "\($0.url.path(percentEncoded: false)): \($0.reason)" }.joined(separator: "\n"))
         }
         // `Text` follows this; strings looked up in code redraw through `ShownLanguage.track()`.
         .environment(\.locale, ShownLanguage.shared.locale)

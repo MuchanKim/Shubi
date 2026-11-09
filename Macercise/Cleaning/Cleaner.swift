@@ -9,8 +9,35 @@ nonisolated enum Cleaner {
         var id: URL { url }
     }
 
-    /// Only the user's own files, caches, developer build data, app data folders and installed apps may be deleted.
-    static func isAllowed(_ url: URL, home: URL = FileManager.default.homeDirectoryForCurrentUser) -> Bool {
+    /// Where each kind of item may be deleted from. Each kind gets only its own rules: a cache folder that links into
+    /// ~/Documents or into another app's data folder resolves outside the caches, so it can't take those files with it.
+    enum Policy: Sendable {
+        case cache, developer, appData, app, log
+        /// Documents and large files the user picked: anything in the home folder outside ~/Library, ~/Applications
+        /// and hidden folders.
+        case ownFiles
+
+        /// An uninstalled app leaves caches and logs next to its data; each is held to its own folder's rules.
+        init(leftover: URL, home: URL = FileManager.default.homeDirectoryForCurrentUser) {
+            let path = leftover.standardizedFileURL.path(percentEncoded: false)
+            let library = home.path(percentEncoded: false).trimmingSuffix("/") + "/Library/"
+            self = path.hasPrefix(library + "Caches/") ? .cache : path.hasPrefix(library + "Logs/") ? .log : .appData
+        }
+
+        init(_ kind: ScanItem.Kind) {
+            switch kind {
+            case .browserCache, .cache, .packageCache: self = .cache
+            // Simulators, runtimes and previews are cleaned by command, not by deleting files.
+            case .derivedData, .deviceSupport, .archive, .simulator, .runtime, .previews: self = .developer
+            case .appData: self = .appData
+            case .app: self = .app
+            case .log: self = .log
+            case .document, .largeFile: self = .ownFiles
+            }
+        }
+    }
+
+    static func isAllowed(_ url: URL, as policy: Policy, home: URL = FileManager.default.homeDirectoryForCurrentUser) -> Bool {
         // Resolve the parent only: deleting a symlink itself is harmless, but a symlinked parent could point anywhere.
         let parent = url.standardizedFileURL.deletingLastPathComponent().resolvingSymlinksInPath()
         let path = parent.appending(path: url.lastPathComponent).path(percentEncoded: false)
@@ -20,60 +47,65 @@ nonisolated enum Cleaner {
         func under(_ root: String) -> Bool { path.hasPrefix(root + "/") && path.count > root.count + 1 }
         // Whole app or device folders only, never something inside another app's data.
         func childOf(_ root: String) -> Bool { parentPath == root }
-
-        if under("/Applications") || under(home + "/Applications") || under(home + "/Library/Caches") { return true }
         let developer = home + "/Library/Developer/Xcode"
-        if childOf(developer + "/DerivedData") { return true }
-        if ["iOS", "watchOS", "tvOS", "visionOS"].contains(where: { childOf(developer + "/\($0) DeviceSupport") }) { return true }
-        if childOf(home + "/Library/Application Support") || childOf(home + "/Library/Containers") { return true }
-        // A Chromium (Electron) app's own cache folders inside its data folder, never the folder or its other contents.
-        let support = home + "/Library/Application Support/"
-        if path.hasPrefix(support) {
+
+        switch policy {
+        case .cache:
+            // Tools' download caches (XDG), one folder at a time.
+            if under(home + "/Library/Caches") || childOf(home + "/.cache") { return true }
+            // A Chromium (Electron) app's own cache folders inside its data folder, never the folder or its other contents.
+            let support = home + "/Library/Application Support/"
+            guard path.hasPrefix(support) else { return false }
             let inside = path.dropFirst(support.count).split(separator: "/", omittingEmptySubsequences: false)
-            if inside.count >= 2, !inside[0].isEmpty, !inside[0].hasPrefix("com.apple."), LibraryScanner.chromiumCacheNames.contains(inside.dropFirst().joined(separator: "/")) {
-                return true
-            }
+            return inside.count >= 2 && !inside[0].isEmpty && !inside[0].hasPrefix("com.apple.")
+                && LibraryScanner.chromiumCacheNames.contains(inside.dropFirst().joined(separator: "/"))
+        case .developer:
+            if childOf(developer + "/DerivedData") { return true }
+            if ["iOS", "watchOS", "tvOS", "visionOS"].contains(where: { childOf(developer + "/\($0) DeviceSupport") }) { return true }
+            return parent.deletingLastPathComponent().path(percentEncoded: false).trimmingSuffix("/") == developer + "/Archives"
+                && url.pathExtension == "xcarchive"
+        case .appData:
+            // An app's data folder, or what an uninstalled app leaves behind, found by its bundle ID.
+            return ["Application Support", "Containers", "Saved Application State", "HTTPStorages", "WebKit"]
+                .contains { childOf(home + "/Library/\($0)") }
+        case .app:
+            return under("/Applications") || under(home + "/Applications")
+        case .log:
+            return under(home + "/Library/Logs")
+        case .ownFiles:
+            // Hidden top-level folders (~/.ssh, ~/.Trash, ...) are off limits.
+            func inside(_ root: String) -> Bool { path == root || under(root) }
+            return under(home) && !inside(home + "/Library") && !inside(home + "/Applications")
+                && !path.dropFirst(home.count + 1).hasPrefix(".")
         }
-        if under(home + "/Library/Logs") { return true }
-        if parent.deletingLastPathComponent().path(percentEncoded: false).trimmingSuffix("/") == developer + "/Archives",
-           url.pathExtension == "xcarchive" { return true }
-        // What an uninstalled app leaves behind, found by its bundle ID.
-        if ["Saved Application State", "HTTPStorages", "WebKit"].contains(where: { childOf(home + "/Library/\($0)") }) { return true }
-        if under(home + "/Library") { return false }
-        guard under(home) else { return false }
-        // Tools' download caches (XDG), one folder at a time.
-        if childOf(home + "/.cache") { return true }
-        // Hidden top-level folders (~/.ssh, ~/.Trash, ...) are off limits.
-        return !path.dropFirst(home.count + 1).hasPrefix(".")
     }
 
     /// Cleans each item by its command or by deleting its targets. One failure doesn't stop the rest.
     /// An app's leftover data goes too only when the user asked for it.
     static func clean(_ items: [ScanItem], mode: Mode, removesLeftovers: Bool = false) -> [Failure] {
         items.flatMap { item in
-            // The scan may be minutes old; deleting a cache now would pull files out from under the app.
-            if let owner = item.ownerBundleID, isAppRunning(owner) {
+            // The scan may be minutes old; deleting a cache now would pull files out from under the app or a build.
+            if item.isInUse {
                 return [Failure(url: item.url, reason: String(localized: "실행 중이라 건너뛰었어요. 앱을 종료한 뒤 다시 정리하세요.", bundle: .shown, locale: .shown))]
             }
-            // shortcut: command-line users (xcodebuild, swift build, Playwright tests) aren't apps, so they aren't checked; track their processes if one breaks mid-run.
             if let command = item.command {
                 return run(command).map { [Failure(url: item.url, reason: $0)] } ?? []
             }
             // Each log is checked right before it goes: one written to since the scan is current again.
             let failures = item.kind == .log
-                ? item.targets.flatMap { LibraryScanner.isOld($0, before: .now.addingTimeInterval(-LibraryScanner.logRetention)) ? delete([$0], mode: mode) : [] }
-                : delete(item.targets, mode: mode)
+                ? item.targets.flatMap { LibraryScanner.isOld($0, before: .now.addingTimeInterval(-LibraryScanner.logRetention)) ? delete([$0], as: .log, mode: mode) : [] }
+                : delete(item.targets, as: Policy(item.kind), mode: mode)
             // Only once the app itself is gone: deleting its data while the app stays would just reset it.
             guard removesLeftovers, failures.isEmpty, !item.leftovers.isEmpty else { return failures }
             // Another copy of the app (an older or newer build elsewhere) still uses the same data.
             if let id = item.ownerBundleID, !LibraryScanner.installedCopies(of: id, excluding: item.targets).isEmpty { return [] }
-            return delete(item.leftovers, mode: mode)
+            return item.leftovers.flatMap { delete([$0], as: Policy(leftover: $0), mode: mode) }
         }
     }
 
-    static func delete(_ urls: [URL], mode: Mode) -> [Failure] {
+    static func delete(_ urls: [URL], as policy: Policy, mode: Mode) -> [Failure] {
         urls.compactMap { url -> Failure? in
-            guard isAllowed(url) else { return Failure(url: url, reason: String(localized: "허용되지 않은 경로", bundle: .shown, locale: .shown)) }
+            guard isAllowed(url, as: policy) else { return Failure(url: url, reason: String(localized: "허용되지 않은 경로", bundle: .shown, locale: .shown)) }
             do {
                 switch mode {
                 case .trash: try FileManager.default.trashItem(at: url, resultingItemURL: nil)

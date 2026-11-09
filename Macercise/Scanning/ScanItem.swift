@@ -16,6 +16,10 @@ nonisolated struct ScanItem: Identifiable, Hashable, Sendable {
     var isRunning = false
     /// The app whose files these are, checked again right before cleaning: it may have started since the scan.
     var ownerBundleID: String?
+    /// Other apps that use the same files (Firefox editions share one cache), checked like the owner.
+    var sharedWith: [String] = []
+    /// Command-line tools that use these files without any app running (`xcodebuild`, `swift build`), checked like the owner.
+    var usedByTools: [String] = []
     /// The owner is gone: an uninstalled app's cache or data, or a simulator whose runtime was removed.
     var isOrphaned = false
     /// No installed app owns it and it isn't an uninstalled app's either, so whether it's in use can't be checked.
@@ -37,17 +41,16 @@ nonisolated struct ScanItem: Identifiable, Hashable, Sendable {
         switch kind {
         // Commands skip the trash and can do more than clear a cache: `brew cleanup --prune=all` also removes old kegs.
         case .browserCache, .cache, .derivedData, .deviceSupport, .packageCache: return command == nil
-        // The two commands smart clean runs: `simctl delete` of a device whose runtime is gone,
-        // and `simctl --set previews delete all`, whose devices Xcode recreates for the next preview.
-        case .simulator: return isOrphaned
+        // Xcode recreates preview devices for the next preview. Any other simulator holds apps and data the user put there,
+        // even one whose runtime is gone: that only means it can't run until the runtime is back.
         case .previews: return true
         // Archives hold the only copy of a shipped build's symbols; old logs don't come back once deleted.
-        case .app, .document, .largeFile, .appData, .runtime, .archive, .log: return false
+        case .app, .document, .largeFile, .appData, .simulator, .runtime, .archive, .log: return false
         }
     }
 
     init(url: URL, name: String, size: Int64, lastUsed: Date?, kind: Kind, targets: [URL]? = nil,
-         isRunning: Bool = false, ownerBundleID: String? = nil, isOrphaned: Bool = false, isOwnerUnknown: Bool = false,
+         isRunning: Bool = false, ownerBundleID: String? = nil, sharedWith: [String] = [], usedByTools: [String] = [], isOrphaned: Bool = false, isOwnerUnknown: Bool = false,
          leftovers: [URL] = [], command: String? = nil, details: [Fact] = []) {
         self.url = url
         self.name = name
@@ -57,6 +60,8 @@ nonisolated struct ScanItem: Identifiable, Hashable, Sendable {
         self.targets = targets ?? [url]
         self.isRunning = isRunning
         self.ownerBundleID = ownerBundleID
+        self.sharedWith = sharedWith
+        self.usedByTools = usedByTools
         self.isOrphaned = isOrphaned
         self.isOwnerUnknown = isOwnerUnknown
         self.leftovers = leftovers
@@ -142,4 +147,28 @@ nonisolated func runProcess(_ executable: String, _ arguments: [String], timeout
 /// Whether an app with this bundle ID is running now.
 nonisolated func isAppRunning(_ bundleID: String) -> Bool {
     !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty
+}
+
+/// Command-line builds use DerivedData and the SwiftPM cache with no app running.
+nonisolated let buildTools = ["xcodebuild", "swift-build", "swift-package", "swift-test", "swift-run"]
+
+/// Whether any process with one of these names is running now.
+nonisolated func isProcessRunning(_ names: [String]) -> Bool {
+    guard !names.isEmpty else { return false }
+    let count = proc_listallpids(nil, 0)
+    guard count > 0 else { return false }
+    // Room for processes started between the two calls.
+    var pids = [pid_t](repeating: 0, count: Int(count) * 2)
+    let filled = Int(proc_listallpids(&pids, Int32(pids.count * MemoryLayout<pid_t>.size)))
+    var buffer = [CChar](repeating: 0, count: Int(MAXCOMLEN) * 2 + 1)
+    return pids.prefix(max(filled, 0)).contains { pid in
+        pid > 0 && proc_name(pid, &buffer, UInt32(buffer.count)) > 0 && names.contains(String(cString: buffer))
+    }
+}
+
+extension ScanItem {
+    /// Whether the owner, an app sharing the files, or a tool using them is running now.
+    nonisolated var isInUse: Bool {
+        ([ownerBundleID].compactMap(\.self) + sharedWith).contains(where: isAppRunning) || isProcessRunning(usedByTools)
+    }
 }

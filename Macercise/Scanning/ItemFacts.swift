@@ -115,14 +115,14 @@ nonisolated enum ItemFacts {
                                 reason: "설정, 로그인 정보, 앱 안에 저장한 작업물이 있을 수 있어요. 그 앱을 다시 쓰지 않을 때만 지우세요.")
         case .simulator:
             return item.isOrphaned
-                ? DeletionRisk(level: .safe, title: "이미 쓸 수 없는 시뮬레이터예요",
-                               reason: "런타임이 지워져서 Xcode에서 실행할 수 없어요.")
+                ? DeletionRisk(level: .caution, title: "런타임이 지워져 지금은 실행할 수 없어요",
+                               reason: "설치한 앱과 데이터가 함께 지워져요. 지우지 않고 런타임을 다시 받으면 이 기기를 다시 쓸 수 있어요.")
                 : DeletionRisk(level: .caution, title: "테스트 앱과 데이터가 함께 지워져요",
                                reason: "설치한 앱과 데이터가 사라져요. 같은 기기는 Xcode에서 언제든 다시 만들 수 있어요.")
         case .runtime:
             let users = String(localized: "\(simulatorsUsingRuntime)개", bundle: .shown, locale: .shown)
             return DeletionRisk(level: simulatorsUsingRuntime == 0 ? .safe : .caution, title: "다시 받으려면 몇 GB를 내려받아야 해요",
-                                reason: "이 런타임을 쓰는 시뮬레이터 \(users)를 쓸 수 없게 돼요. Xcode 설정의 Components에서 다시 받을 수 있어요.")
+                                reason: "이 런타임을 쓰는 시뮬레이터 \(users)를 쓸 수 없게 돼요. Xcode 설정의 Components가 이 버전을 제공하면 다시 받을 수 있어요.")
         case .deviceSupport:
             return DeletionRisk(level: .safe, title: "기기를 연결하면 다시 만들어져요",
                                 reason: "실제 기기 디버깅용 심볼이에요. 이 버전의 기기를 다시 연결하면 몇 분 동안 다시 준비해요.")
@@ -133,6 +133,11 @@ nonisolated enum ItemFacts {
             return DeletionRisk(level: .safe, title: "다음 미리보기 때 다시 만들어져요",
                                 reason: "지운 뒤 처음 여는 미리보기만 조금 느려져요.")
         case .packageCache:
+            // `--prune=all` also uninstalls every version of a formula but the one in use.
+            if item.command?.hasPrefix("brew cleanup") == true {
+                return DeletionRisk(level: .caution, title: "설치된 패키지의 이전 버전도 지워져요",
+                                    reason: "brew cleanup은 내려받은 파일과 함께 설치된 패키지의 이전 버전을 지워요. 지금 쓰는 버전은 그대로예요.")
+            }
             return DeletionRisk(level: .safe, title: "필요할 때 다시 내려받아요",
                                 reason: "프로젝트에 설치된 패키지는 그대로예요. 다음 설치만 조금 느려질 수 있어요.")
         case .app:

@@ -57,9 +57,17 @@ struct ItemFactsTests {
     /// Verdicts read only the signal, so the label and value text (localized at runtime) don't matter here.
     private func signal(_ signal: Fact.Signal) -> Fact { Fact(label: "", value: "", signal: signal) }
 
-    @Test func unavailableSimulatorIsSafe() {
+    /// A missing runtime doesn't make the apps and data on the simulator worthless.
+    @Test func unavailableSimulatorNeedsCaution() {
         let sim = ScanItem(url: URL(filePath: "/tmp/sim"), name: "iPhone", size: 1, lastUsed: nil, kind: .simulator, isOrphaned: true)
-        #expect(ItemFacts.risk(for: sim, facts: []).level == .safe)
+        #expect(ItemFacts.risk(for: sim, facts: []).level == .caution)
+    }
+
+    /// `brew cleanup --prune=all` also uninstalls older versions of installed formulae.
+    @Test func homebrewCleanupNeedsCaution() {
+        let brew = ScanItem(url: URL(filePath: "/tmp/Homebrew"), name: "Homebrew", size: 1, lastUsed: nil, kind: .packageCache,
+                            command: "brew cleanup --prune=all")
+        #expect(ItemFacts.risk(for: brew, facts: []).level == .caution)
     }
 
     @Test func orphanedAppDataNeedsCaution() {

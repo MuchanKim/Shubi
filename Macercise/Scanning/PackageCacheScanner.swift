@@ -9,6 +9,10 @@ nonisolated enum PackageCacheScanner {
         /// Relative to the home folder.
         let cachePath: String
         let cleanCommand: String?
+        /// Processes that use the cache while they run; cleaning waits for them to finish.
+        var usedBy: [String] = []
+        /// Apps that use the cache while they run, checked the same way.
+        var usedByApps: [String] = []
     }
 
     /// Computed, so the localized names follow a language change at the next scan.
@@ -21,8 +25,11 @@ nonisolated enum PackageCacheScanner {
         Tool(name: "pip", binary: "pip3", cachePath: "Library/Caches/pip", cleanCommand: "pip3 cache purge"),
         Tool(name: "CocoaPods", binary: "pod", cachePath: "Library/Caches/CocoaPods", cleanCommand: "pod cache clean --all"),
         Tool(name: String(localized: "Go 모듈", bundle: .shown, locale: .shown), binary: "go", cachePath: "go/pkg/mod", cleanCommand: "go clean -modcache"),
-        Tool(name: "Swift Package Manager", binary: nil, cachePath: "Library/Caches/org.swift.swiftpm", cleanCommand: nil),
-        Tool(name: String(localized: "Playwright 브라우저", bundle: .shown, locale: .shown), binary: nil, cachePath: "Library/Caches/ms-playwright", cleanCommand: nil),
+        Tool(name: "Swift Package Manager", binary: nil, cachePath: "Library/Caches/org.swift.swiftpm", cleanCommand: nil,
+             usedBy: buildTools, usedByApps: ["com.apple.dt.Xcode"]),
+        // Test runs launch these browsers from Node; any Node process may be one.
+        Tool(name: String(localized: "Playwright 브라우저", bundle: .shown, locale: .shown), binary: nil, cachePath: "Library/Caches/ms-playwright",
+             cleanCommand: nil, usedBy: ["node"]),
     ] }
 
     /// Top-level ~/Library/Caches folders listed here, so the app cache list doesn't repeat them.
@@ -62,6 +69,9 @@ nonisolated enum PackageCacheScanner {
                 kind: .packageCache,
                 // Tools without a clean command keep plain files; delete what's inside, like other caches.
                 targets: tool.cleanCommand == nil ? directoryContents(folder) : nil,
+                isRunning: isProcessRunning(tool.usedBy) || tool.usedByApps.contains(where: isAppRunning),
+                sharedWith: tool.usedByApps,
+                usedByTools: tool.usedBy,
                 command: tool.cleanCommand,
                 details: tool.cleanCommand.map { [Fact(label: String(localized: "정리 명령", bundle: .shown, locale: .shown), value: $0)] } ?? []
             )

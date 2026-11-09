@@ -6,28 +6,34 @@ struct CleanerTests {
     let home = URL(filePath: "/Users/tester")
 
     @Test(arguments: [
-        "/Users/tester/Documents/a.pdf",
-        "/Users/tester/Downloads/movie.mov",
-        "/Users/tester/Library/Caches/Google/Chrome/x",
-        "/Applications/Foo.app",
-        "/Users/tester/Applications/Bar.app",
-        "/Users/tester/Library/Developer/Xcode/DerivedData/Macercise-abc",
-        "/Users/tester/Library/Developer/Xcode/iOS DeviceSupport/iPhone17,3 26.5.2",
-        "/Users/tester/Library/Application Support/com.gone.app",
-        "/Users/tester/Library/Containers/com.gone.app",
-        "/Users/tester/Library/Application Support/Code/Cache",
-        "/Users/tester/Library/Application Support/Code/GPUCache",
-        "/Users/tester/.cache/puppeteer",
-        "/Users/tester/Library/Logs/zoom.us",
-        "/Users/tester/Library/Logs/CoreSimulator/old.log",
-        "/Users/tester/Library/Developer/Xcode/Archives/2026-01-02/Macercise 1-2-26.xcarchive",
-        "/Users/tester/Library/Saved Application State/com.gone.app.savedState",
-        "/Users/tester/Library/HTTPStorages/com.gone.app",
-        "/Users/tester/Library/WebKit/com.gone.app",
+        ("/Users/tester/Documents/a.pdf", Cleaner.Policy.ownFiles),
+        ("/Users/tester/Downloads/movie.mov", .ownFiles),
+        ("/Users/tester/Library/Caches/Google/Chrome/x", .cache),
+        ("/Users/tester/Library/Application Support/Code/Cache", .cache),
+        ("/Users/tester/Library/Application Support/Code/GPUCache", .cache),
+        ("/Users/tester/.cache/puppeteer", .cache),
+        ("/Applications/Foo.app", .app),
+        ("/Users/tester/Applications/Bar.app", .app),
+        ("/Users/tester/Library/Developer/Xcode/DerivedData/Macercise-abc", .developer),
+        ("/Users/tester/Library/Developer/Xcode/iOS DeviceSupport/iPhone17,3 26.5.2", .developer),
+        ("/Users/tester/Library/Developer/Xcode/Archives/2026-01-02/Macercise 1-2-26.xcarchive", .developer),
+        ("/Users/tester/Library/Application Support/com.gone.app", .appData),
+        ("/Users/tester/Library/Containers/com.gone.app", .appData),
+        ("/Users/tester/Library/Saved Application State/com.gone.app.savedState", .appData),
+        ("/Users/tester/Library/HTTPStorages/com.gone.app", .appData),
+        ("/Users/tester/Library/WebKit/com.gone.app", .appData),
+        ("/Users/tester/Library/Logs/zoom.us", .log),
+        ("/Users/tester/Library/Logs/CoreSimulator/old.log", .log),
     ])
-    func allowsUserFilesCachesAndApps(_ path: String) {
-        #expect(Cleaner.isAllowed(URL(filePath: path), home: home))
+    func eachKindIsAllowedOnlyWhereItLives(_ path: String, _ policy: Cleaner.Policy) {
+        #expect(Cleaner.isAllowed(URL(filePath: path), as: policy, home: home))
+        // Under any other kind's rules the same path is refused: a cache is never deleted as an app's data, and so on.
+        for other in Self.policies where other != policy {
+            #expect(!Cleaner.isAllowed(URL(filePath: path), as: other, home: home), "\(path) as \(other)")
+        }
     }
+
+    static let policies: [Cleaner.Policy] = [.cache, .developer, .appData, .app, .log, .ownFiles]
 
     @Test(arguments: [
         "/System/Library/Kernels",
@@ -56,41 +62,62 @@ struct CleanerTests {
         "/Users/tester/Library/Developer/Xcode/Archives/2026-01-02/notes.txt",
         "/Users/tester/Library/Preferences/com.gone.app.plist",
         "/Users/tester/Library/Saved Application State",
+        // The folders themselves, never as the user's own files.
+        "/Users/tester/Library",
+        "/Users/tester/Applications",
     ])
     func rejectsEverythingElse(_ path: String) {
-        #expect(!Cleaner.isAllowed(URL(filePath: path), home: home))
+        for policy in Self.policies {
+            #expect(!Cleaner.isAllowed(URL(filePath: path), as: policy, home: home), "\(policy)")
+        }
+    }
+
+    /// A cache folder that links into ~/Documents or into another app's data folder takes nothing with it.
+    @Test(arguments: ["Documents", "Library/Application Support"])
+    func cacheFolderLinkedElsewhereIsRefused(_ destination: String) throws {
+        let home = try makeTempHome()
+        let target = home.appending(path: destination)
+        let file = target.appending(path: "SomeApp/data.db")
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("x".utf8).write(to: file)
+        let caches = home.appending(path: "Library/Caches")
+        try FileManager.default.createDirectory(at: caches, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: caches.appending(path: "Firefox"), withDestinationURL: target)
+        // What the scanner would list as the cache's contents.
+        let throughCache = caches.appending(path: "Firefox/SomeApp")
+        #expect(!Cleaner.isAllowed(throughCache, as: .cache, home: home))
     }
 
     @Test func rejectsPathThroughSymlinkedParent() throws {
         let home = try makeTempHome()
         let link = home.appending(path: "Documents/sys")
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: URL(filePath: "/System"))
-        #expect(!Cleaner.isAllowed(link.appending(path: "Library"), home: home))
+        #expect(!Cleaner.isAllowed(link.appending(path: "Library"), as: .ownFiles, home: home))
         // The link itself lives in the home folder; removing it doesn't touch /System.
-        #expect(Cleaner.isAllowed(link, home: home))
+        #expect(Cleaner.isAllowed(link, as: .ownFiles, home: home))
     }
 
     @Test func permanentDeleteRemovesFile() throws {
         let file = try makeFileInRealHome()
-        #expect(Cleaner.delete([file], mode: .permanent).isEmpty)
+        #expect(Cleaner.delete([file], as: .cache, mode: .permanent).isEmpty)
         #expect(!FileManager.default.fileExists(atPath: file.path(percentEncoded: false)))
     }
 
     @Test func trashMovesFile() throws {
         let file = try makeFileInRealHome()
-        #expect(Cleaner.delete([file], mode: .trash).isEmpty)
+        #expect(Cleaner.delete([file], as: .cache, mode: .trash).isEmpty)
         #expect(!FileManager.default.fileExists(atPath: file.path(percentEncoded: false)))
     }
 
     /// The list can be stale: the user may have removed the file in Finder since the scan.
     @Test func deletingWhatIsAlreadyGoneSucceeds() throws {
         let file = try makeFileInRealHome()
-        #expect(Cleaner.delete([file], mode: .permanent).isEmpty)
-        #expect(Cleaner.delete([file], mode: .permanent).isEmpty)
+        #expect(Cleaner.delete([file], as: .cache, mode: .permanent).isEmpty)
+        #expect(Cleaner.delete([file], as: .cache, mode: .permanent).isEmpty)
     }
 
     @Test func refusedPathIsReportedNotDeleted() {
-        let failures = Cleaner.delete([URL(filePath: "/System/Library/Kernels")], mode: .permanent)
+        let failures = Cleaner.delete([URL(filePath: "/System/Library/Kernels")], as: .ownFiles, mode: .permanent)
         #expect(failures.count == 1)
     }
 
@@ -100,14 +127,18 @@ struct CleanerTests {
         return home
     }
 
-    /// delete() checks against the real home, so the fixture must live there (in Caches, which is allowed).
-    private func makeFileInRealHome() throws -> URL {
-        let dir = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Library/Caches/MacerciseTests")
+    /// delete() checks against the real home, so the fixture must live there, where its kind is allowed:
+    /// caches by default, `Applications/MacerciseTests` for an app, `Library/Application Support` for an app's data.
+    private func makeFileInRealHome(_ folder: String = "Library/Caches/MacerciseTests") throws -> URL {
+        let dir = FileManager.default.homeDirectoryForCurrentUser.appending(path: folder)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let file = dir.appending(path: UUID().uuidString)
+        let file = dir.appending(path: "MacerciseTests-" + UUID().uuidString)
         try Data("x".utf8).write(to: file)
         return file
     }
+
+    private func makeAppInRealHome() throws -> URL { try makeFileInRealHome("Applications/MacerciseTests") }
+    private func makeAppDataInRealHome() throws -> URL { try makeFileInRealHome("Library/Application Support") }
 
     @Test func commandItemsRunTheirCommand() {
         let ok = ScanItem(url: URL(filePath: "/tmp/ok"), name: "ok", size: 0, lastUsed: nil, kind: .packageCache, command: "true")
@@ -119,21 +150,32 @@ struct CleanerTests {
 
     /// An app whose removal failed keeps its data: wiping only the data would just reset the app.
     @Test func leftoversGoOnlyAfterTheApp() throws {
-        let data = try makeFileInRealHome()
+        let data = try makeAppDataInRealHome()
         let stuck = ScanItem(url: URL(filePath: "/System/Applications/Stuck.app"), name: "Stuck", size: 1, lastUsed: nil, kind: .app,
                              leftovers: [data])
         #expect(Cleaner.clean([stuck], mode: .permanent, removesLeftovers: true).count == 1)
         #expect(FileManager.default.fileExists(atPath: data.path(percentEncoded: false)))
 
-        let app = try makeFileInRealHome()
+        let app = try makeAppInRealHome()
         let removable = ScanItem(url: app, name: "Gone", size: 1, lastUsed: nil, kind: .app, leftovers: [data])
         #expect(Cleaner.clean([removable], mode: .permanent, removesLeftovers: true).isEmpty)
         #expect(!FileManager.default.fileExists(atPath: data.path(percentEncoded: false)))
     }
 
+    /// An uninstalled app leaves data, caches and logs; each goes under its own folder's rules.
+    @Test func leftoversInEveryLibraryFolderGoWithTheApp() throws {
+        let app = try makeAppInRealHome()
+        let leftovers = try ["Library/Application Support", "Library/Caches", "Library/Logs"].map { try makeFileInRealHome($0) }
+        defer { leftovers.forEach { try? FileManager.default.removeItem(at: $0) } }
+        let item = ScanItem(url: app, name: "Gone", size: 1, lastUsed: nil, kind: .app, leftovers: leftovers)
+        #expect(Cleaner.clean([item], mode: .permanent, removesLeftovers: true).isEmpty)
+        for leftover in leftovers { #expect(!FileManager.default.fileExists(atPath: leftover.path(percentEncoded: false))) }
+    }
+
     /// Leftovers may hold a notes app's only copy of the user's documents, so they stay unless asked for.
     @Test func leftoversStayByDefault() throws {
-        let app = try makeFileInRealHome(), data = try makeFileInRealHome()
+        let app = try makeAppInRealHome(), data = try makeAppDataInRealHome()
+        defer { try? FileManager.default.removeItem(at: data) }
         let item = ScanItem(url: app, name: "Gone", size: 1, lastUsed: nil, kind: .app, leftovers: [data])
         #expect(Cleaner.clean([item], mode: .permanent).isEmpty)
         #expect(!FileManager.default.fileExists(atPath: app.path(percentEncoded: false)))
@@ -142,7 +184,8 @@ struct CleanerTests {
 
     /// Removing one copy of an app must not take the data another installed copy still uses (Chess stays in /System).
     @Test func leftoversStayWhileAnotherCopyIsInstalled() throws {
-        let copy = try makeFileInRealHome(), data = try makeFileInRealHome()
+        let copy = try makeAppInRealHome(), data = try makeAppDataInRealHome()
+        defer { try? FileManager.default.removeItem(at: data) }
         let item = ScanItem(url: copy, name: "Chess", size: 1, lastUsed: nil, kind: .app, ownerBundleID: "com.apple.Chess", leftovers: [data])
         #expect(Cleaner.clean([item], mode: .permanent, removesLeftovers: true).isEmpty)
         #expect(!FileManager.default.fileExists(atPath: copy.path(percentEncoded: false)))
@@ -158,7 +201,7 @@ struct CleanerTests {
 
     /// A log written to after the scan is current again and stays; an untouched one goes.
     @Test func logWrittenSinceTheScanStays() throws {
-        let folder = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Library/Caches/MacerciseTests/logs-\(UUID().uuidString)")
+        let folder = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Library/Logs/MacerciseTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         let written = folder.appending(path: "written.log"), untouched = folder.appending(path: "untouched.log")
@@ -187,6 +230,26 @@ struct CleanerTests {
         let idle = ScanItem(url: file, name: "cache", size: 1, lastUsed: nil, kind: .cache, ownerBundleID: "com.example.not-installed")
         #expect(Cleaner.clean([idle], mode: .permanent).isEmpty)
         #expect(!FileManager.default.fileExists(atPath: file.path(percentEncoded: false)))
+    }
+
+    /// Command-line builds and other apps sharing the files count as using them, like the owner.
+    @Test func itemInUseByAToolOrASharingAppIsSkipped() throws {
+        let file = try makeFileInRealHome()
+        let building = ScanItem(url: file, name: "cache", size: 1, lastUsed: nil, kind: .cache, usedByTools: ["Macercise"])
+        #expect(building.isInUse)
+        #expect(Cleaner.clean([building], mode: .permanent).map(\.url) == [file])
+        let shared = ScanItem(url: file, name: "cache", size: 1, lastUsed: nil, kind: .browserCache,
+                              ownerBundleID: "com.example.not-installed", sharedWith: ["com.apple.finder"])
+        #expect(shared.isInUse)
+        let idle = ScanItem(url: file, name: "cache", size: 1, lastUsed: nil, kind: .cache, usedByTools: ["no-such-tool"])
+        #expect(!idle.isInUse)
+        #expect(Cleaner.clean([idle], mode: .permanent).isEmpty)
+    }
+
+    /// An app on an external drive is installed, even one mounted read-only; only a disk image's isn't.
+    @Test func appsOutsideDiskImagesCountAsInstalled() {
+        #expect(!LibraryScanner.isOnInstallerImage(URL(filePath: "/Applications/Safari.app")))
+        #expect(!LibraryScanner.isOnInstallerImage(URL(filePath: "/Volumes/Unreadable/App.app")))
     }
 
     @Test func commandsCantWaitForInput() {

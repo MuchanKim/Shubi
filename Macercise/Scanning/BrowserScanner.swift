@@ -10,7 +10,8 @@ nonisolated enum BrowserScanner {
         var cachePaths: [String] = []
     }
 
-    // Order matters: browsers sharing a cache folder (Firefox editions) give it to the first one listed.
+    // Browsers sharing a cache folder (Firefox editions) list it each; the first one listed names the item,
+    // and all of them keep it from being cleaned while running.
     static let known: [Browser] = [
         Browser(name: "Safari", bundleID: "com.apple.Safari"),
         Browser(name: "Safari Technology Preview", bundleID: "com.apple.SafariTechnologyPreview"),
@@ -20,8 +21,8 @@ nonisolated enum BrowserScanner {
         Browser(name: "Chromium", bundleID: "org.chromium.Chromium", cachePaths: ["Chromium"]),
         Browser(name: "Microsoft Edge", bundleID: "com.microsoft.edgemac", cachePaths: ["Microsoft Edge"]),
         Browser(name: "Firefox", bundleID: "org.mozilla.firefox", cachePaths: ["Firefox"]),
-        Browser(name: "Firefox Developer Edition", bundleID: "org.mozilla.firefoxdeveloperedition"),
-        Browser(name: "Firefox Nightly", bundleID: "org.mozilla.nightly"),
+        Browser(name: "Firefox Developer Edition", bundleID: "org.mozilla.firefoxdeveloperedition", cachePaths: ["Firefox"]),
+        Browser(name: "Firefox Nightly", bundleID: "org.mozilla.nightly", cachePaths: ["Firefox"]),
         Browser(name: "Zen", bundleID: "app.zen-browser.zen", cachePaths: ["zen"]),
         Browser(name: "Floorp", bundleID: "one.ablaze.floorp", cachePaths: ["Floorp"]),
         Browser(name: "LibreWolf", bundleID: "io.gitlab.librewolf-community", cachePaths: ["librewolf"]),
@@ -68,15 +69,28 @@ nonisolated enum BrowserScanner {
         let fm = FileManager.default
         let caches = fm.homeDirectoryForCurrentUser.appending(path: "Library/Caches")
         let installed = installedBrowsers()
+        let all = browsers(installed: installed)
+        func folders(of browser: Browser) -> [URL] {
+            (browser.cachePaths + [browser.bundleID]).map { caches.appending(path: $0).standardizedFileURL }
+        }
+        func app(of browser: Browser) -> URL? {
+            installed[browser.bundleID] ?? installed.values.first { $0.deletingPathExtension().lastPathComponent == browser.name }
+        }
+        // Every browser that lists a folder may be the one using it, under its listed ID or, for a copy found by name,
+        // the ID that copy actually runs as.
+        var users: [URL: Set<String>] = [:]
+        for browser in all {
+            let ids = [browser.bundleID] + [app(of: browser).flatMap { Bundle(url: $0)?.bundleIdentifier }].compactMap(\.self)
+            for folder in folders(of: browser) { users[folder, default: []].formUnion(ids) }
+        }
         var claimed: Set<URL> = []
-        return browsers(installed: installed).compactMap { browser in
-            let appURL = installed[browser.bundleID]
-                ?? installed.values.first { $0.deletingPathExtension().lastPathComponent == browser.name }
+        return all.compactMap { browser in
+            let appURL = app(of: browser)
             // Unreadable folders (Safari without Full Disk Access) are skipped; the banner explains why.
-            let dirs = (browser.cachePaths + [browser.bundleID])
-                .map { caches.appending(path: $0).standardizedFileURL }
+            let dirs = folders(of: browser)
                 .filter { claimed.insert($0).inserted && (try? fm.contentsOfDirectory(at: $0, includingPropertiesForKeys: nil)) != nil }
             guard let first = dirs.first else { return nil }
+            let sharers = dirs.reduce(into: Set<String>()) { $0.formUnion(users[$1] ?? []) }.subtracting([browser.bundleID])
             return ScanItem(
                 url: first,
                 // A cache left behind by an uninstalled browser is pure waste, so it's listed too.
@@ -85,8 +99,9 @@ nonisolated enum BrowserScanner {
                 lastUsed: appURL.flatMap { NSMetadataItem(url: $0)?.value(forAttribute: NSMetadataItemLastUsedDateKey) as? Date },
                 kind: .browserCache,
                 targets: dirs.flatMap { (try? fm.contentsOfDirectory(at: $0, includingPropertiesForKeys: nil)) ?? [] },
-                isRunning: isAppRunning(browser.bundleID),
+                isRunning: ([browser.bundleID] + sharers).contains(where: isAppRunning),
                 ownerBundleID: browser.bundleID,
+                sharedWith: sharers.sorted(),
                 isOrphaned: appURL == nil
             )
         }

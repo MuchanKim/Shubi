@@ -103,7 +103,8 @@ struct DeleteSheet: View {
                     Button("삭제", role: .destructive) {
                         if mode == .permanent { confirmPermanent = true } else { run() }
                     }
-                    .disabled(isDeleting)
+                    // One deletion at a time, across every window.
+                    .disabled(isDeleting || Cleanup.shared.isRunning)
                 }
             } else {
                 HStack {
@@ -128,6 +129,7 @@ struct DeleteSheet: View {
     }
 
     private func run() {
+        guard Cleanup.shared.begin() else { return }
         isDeleting = true
         // Fixed here: the mode the user confirmed applies to every item.
         let mode = mode
@@ -140,6 +142,7 @@ struct DeleteSheet: View {
                 result += await Task.detached { Cleaner.clean([item], mode: mode, removesLeftovers: removesLeftovers) }.value
             }
             isDeleting = false
+            Cleanup.shared.end()
             onDeleted()
             if result.isEmpty { dismiss() } else { failures = result }
         }

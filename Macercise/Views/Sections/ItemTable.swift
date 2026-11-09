@@ -114,7 +114,8 @@ struct ItemTable<Key: Hashable>: View {
                 Button("삭제…", role: .destructive) {
                     deleting = DeleteTargets(items: selected)
                 }
-                    .disabled(selected.isEmpty)
+                    // One deletion at a time, across every window.
+                    .disabled(selected.isEmpty || Cleanup.shared.isRunning)
             }
             // 16, not the page margin: lines up with the table rows, which keep the system's inset.
             .padding(.horizontal, Layout.Spacing.l)
@@ -129,10 +130,10 @@ struct ItemTable<Key: Hashable>: View {
         }
         // Restarted, and the superseded scan's result dropped, by a change of the key, a reload, the language or a smart clean.
         .task(id: ScanTrigger(key: scanKey, reload: reloadCount, language: ShownLanguage.shared.locale.identifier,
-                              cleaned: SmartCleanRun.shared.finished)) {
+                              cleaned: Cleanup.shared.finished)) {
             let trigger = ScanTrigger(key: scanKey, reload: reloadCount, language: ShownLanguage.shared.locale.identifier,
-                                      cleaned: SmartCleanRun.shared.finished)
-            // A language change or a smart clean scans again in place: the list keeps its selection and sort,
+                                      cleaned: Cleanup.shared.finished)
+            // A language change or a deletion elsewhere scans again in place: the list keeps its selection and sort,
             // and loses only what was deleted.
             let inPlace = loaded.map { $0.key == trigger.key && $0.reload == trigger.reload } ?? false
             if !inPlace {

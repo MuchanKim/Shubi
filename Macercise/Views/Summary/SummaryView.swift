@@ -11,7 +11,6 @@ struct SummaryView: View {
     /// nil when the Trash can't be read without Full Disk Access.
     @State private var trashSize: Int64?
     @State private var confirmEmptyTrash = false
-    @State private var isEmptyingTrash = false
     @State private var trashError: String?
     @AppStorage(Theme.storageKey) private var theme = Theme.default
     @Environment(\.colorScheme) private var colorScheme
@@ -71,7 +70,7 @@ struct SummaryView: View {
         // A language change scans again without draining the tank: the item names inside are words.
         .onChange(of: ShownLanguage.shared.locale) { reloadCount += 1 }
         // After a clean, wherever it was started from: the summary shows the space it freed.
-        .onChange(of: SmartCleanRun.shared.finished) { rescan(fillingTank: false) }
+        .onChange(of: Cleanup.shared.finished) { rescan(fillingTank: false) }
         .task(id: reloadCount) {
             await measureDisk()
             // A rescan during the measurement has started a newer task; this one must not reset its count.
@@ -214,7 +213,7 @@ struct SummaryView: View {
                     .focusEffectDisabled()
                     // Kept in the layout while scanning, so the total doesn't jump when the button appears.
                     .opacity(isScanning ? 0 : 1)
-                    .disabled(isScanning || SmartCleanRun.shared.isCleaning)
+                    .disabled(isScanning || Cleanup.shared.isRunning)
                     .accessibilityHidden(isScanning)
             }
         }
@@ -236,7 +235,8 @@ struct SummaryView: View {
             Button("비우기") { confirmEmptyTrash = true }
                 .accessibilityLabel("휴지통 비우기")
                 // Not disabled at 0: only the home Trash is measured, while Finder also empties other disks' Trash.
-                .disabled(isEmptyingTrash)
+                // One deletion at a time, across every window: a sheet may be moving files to the Trash right now.
+                .disabled(Cleanup.shared.isRunning)
                 .help("이 맥의 휴지통 크기예요. 외장 디스크의 휴지통도 함께 비워요.")
         }
         .padding(Layout.Spacing.m)
@@ -311,18 +311,18 @@ struct SummaryView: View {
 
     /// Finder empties every Trash (other volumes' too) and works without Full Disk Access.
     private func emptyTrash() {
-        isEmptyingTrash = true
+        guard Cleanup.shared.begin() else { return }
         Task {
             trashError = await Task.detached { Cleaner.run("/usr/bin/osascript -e 'tell application \"Finder\" to empty trash'") }.value
-            await measureDisk()
-            isEmptyingTrash = false
+            // Every screen rescans, this one included, measuring the disk again.
+            Cleanup.shared.end()
         }
     }
 
-    static let smartCleanInfo: LocalizedStringKey = "앱이 다시 만드는 캐시와 빌드 데이터, 쓸 수 없는 시뮬레이터만 바로 지워요. 실행 중인 앱의 캐시와 내 파일은 그대로 둬요."
+    static let smartCleanInfo: LocalizedStringKey = "앱이 다시 만드는 캐시와 빌드 데이터, SwiftUI 미리보기 시뮬레이터만 바로 지워요. 실행 중인 앱의 캐시와 내 파일은 그대로 둬요."
 
     /// No confirmation: it only takes what apps make again.
-    private func smartClean() { SmartCleanRun.shared.start(scans: Self.scanned.flatMap(\.1)) }
+    private func smartClean() { Cleanup.shared.smartClean(scans: Self.scanned.flatMap(\.1)) }
 
     /// `fillingTank`: the water drains and rises again as sections finish, to show the scan working.
     /// Off after a cleanup, so the water goes straight to the new level instead of refilling.

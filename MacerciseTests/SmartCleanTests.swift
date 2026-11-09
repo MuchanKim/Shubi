@@ -44,15 +44,15 @@ struct SmartCleanTests {
         #expect(!item(kind, name: name, isOrphaned: kind == .appData).isSmartCleanable)
     }
 
-    /// Xcode recreates preview devices, so their delete command is one of the two smart clean runs.
+    /// Xcode recreates preview devices, so their delete command is the one command smart clean runs.
     @Test func previewDevicesAreIncluded() {
         #expect(item(.previews, command: "xcrun simctl --set previews delete all").isSmartCleanable)
     }
 
-    @Test(arguments: [(true, true), (false, false)])
-    func simulatorIsIncludedOnlyWhenUnusable(_ isOrphaned: Bool, _ expected: Bool) {
-        let simulator = item(.simulator, isOrphaned: isOrphaned, command: "xcrun simctl delete 'UDID'")
-        #expect(simulator.isSmartCleanable == expected)
+    /// A simulator whose runtime is gone still holds the apps and data put on it; it only can't run until the runtime is back.
+    @Test(arguments: [true, false])
+    func simulatorsAreNeverIncluded(_ isOrphaned: Bool) {
+        #expect(!item(.simulator, isOrphaned: isOrphaned, command: "xcrun simctl delete 'UDID'").isSmartCleanable)
     }
 
     private func item(_ kind: ScanItem.Kind, name: String = "item", isRunning: Bool = false, isOrphaned: Bool = false,

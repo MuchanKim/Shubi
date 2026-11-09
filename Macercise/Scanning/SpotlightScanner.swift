@@ -49,11 +49,12 @@ nonisolated enum SpotlightScanner {
     @concurrent static func largeFiles(minBytes: Int64, videosOnly: Bool) async -> [ScanItem] {
         var q = "kMDItemFSSize > \(minBytes)"
         if videosOnly { q += " && kMDItemContentTypeTree == \"public.movie\"" }
-        let library = home.appending(path: "Library").path(percentEncoded: false) + "/"
+        // ~/Library and ~/Applications aren't the user's own files: Cleaner deletes those only as caches, data or apps.
+        let excluded = ["Library", "Applications"].map { home.appending(path: $0).path(percentEncoded: false) + "/" }
         let items = query(q, scopes: [home])
             .compactMap { item -> ScanItem? in
-                // ~/Library is excluded: Cleaner refuses to delete there anyway (except Caches).
-                guard let url = item.url, isLooseFile(url), !url.path(percentEncoded: false).hasPrefix(library) else { return nil }
+                guard let url = item.url, isLooseFile(url),
+                      !excluded.contains(where: url.path(percentEncoded: false).hasPrefix) else { return nil }
                 let size = allocatedSize(of: url)
                 guard size > minBytes else { return nil }
                 return ScanItem(url: url, name: url.lastPathComponent, size: size, lastUsed: item.lastUsed, kind: .largeFile)

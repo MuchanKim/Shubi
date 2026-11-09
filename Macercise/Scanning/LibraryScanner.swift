@@ -1,4 +1,5 @@
 import AppKit
+import DiskArbitration
 import Synchronization
 
 /// App caches and data folders left in ~/Library, matched to their owning app by folder name.
@@ -29,7 +30,9 @@ nonisolated enum LibraryScanner {
                 kind: .cache,
                 targets: contents,
                 isRunning: ownerID.map(isAppRunning) ?? false,
-                ownerBundleID: ownerID,
+                // An orphan's folder is named after its app: if that app turns out to be running (from somewhere
+                // ownership can't see), the check right before cleaning still catches it.
+                ownerBundleID: ownerID ?? (orphaned ? name : nil),
                 isOrphaned: orphaned,
                 isOwnerUnknown: owner == nil && !orphaned,
                 details: owner.map { [Fact(label: String(localized: "앱", bundle: .shown, locale: .shown), value: $0.path(percentEncoded: false))] } ?? []
@@ -207,7 +210,7 @@ nonisolated enum LibraryScanner {
             if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: parts.joined(separator: ".")),
                // LaunchServices remembers apps from unmounted disk images and deleted bundles.
                FileManager.default.fileExists(atPath: url.path(percentEncoded: false)),
-               !url.path(percentEncoded: false).hasPrefix("/Volumes/") {
+               !isOnInstallerImage(url) {
                 return url
             }
             parts.removeLast()
@@ -243,9 +246,25 @@ nonisolated enum LibraryScanner {
     }
 
     private static func queryInstalledBundleIDs() -> Set<String> {
-        Set(SpotlightScanner.query("kMDItemContentType == \"com.apple.application-bundle\"", scopes: [URL(filePath: "/")])
-            .filter { !($0.url?.path(percentEncoded: false).hasPrefix("/Volumes/") ?? true) }
-            .compactMap { $0.string(kMDItemCFBundleIdentifier) })
+        let found = SpotlightScanner.query("kMDItemContentType == \"com.apple.application-bundle\"", scopes: [URL(filePath: "/")])
+            .filter { $0.url.map { !isOnInstallerImage($0) } ?? false }
+            .compactMap { $0.string(kMDItemCFBundleIdentifier) }
+        // A running app is installed wherever it runs from, even where Spotlight doesn't index.
+        guard !found.isEmpty else { return [] }
+        return Set(found).union(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
+    }
+
+    /// An app on a mounted installer (a read-only disk image) isn't installed. One on an external drive is, even mounted
+    /// read-only, and so is one kept in a writable image. When unsure, the app counts as installed: a wrong "orphaned"
+    /// invites deleting live data.
+    static func isOnInstallerImage(_ app: URL) -> Bool {
+        guard app.path(percentEncoded: false).hasPrefix("/Volumes/"),
+              let values = try? app.resourceValues(forKeys: [.volumeURLKey, .volumeIsReadOnlyKey]),
+              values.volumeIsReadOnly == true, let volume = values.volume,
+              let session = DASessionCreate(kCFAllocatorDefault),
+              let disk = DADiskCreateFromVolumePath(kCFAllocatorDefault, session, volume as CFURL),
+              let info = DADiskCopyDescription(disk) as? [CFString: Any] else { return false }
+        return info[kDADiskDescriptionDeviceModelKey] as? String == "Disk Image"
     }
 
     private static func isSystemOwned(_ name: String) -> Bool {

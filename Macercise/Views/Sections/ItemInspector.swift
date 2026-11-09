@@ -3,9 +3,14 @@ import SwiftUI
 struct ItemInspector: View {
     let item: ScanItem
 
-    @State private var facts: [Fact] = []
+    /// Tagged with what they were made from (the item as scanned, and the language): while newer facts load,
+    /// nothing is judged on stale ones.
+    @State private var made: (key: [AnyHashable], facts: [Fact])?
+
+    private var key: [AnyHashable] { [item, ShownLanguage.shared.locale] }
 
     var body: some View {
+        let facts = made?.key == key ? made?.facts ?? [] : []
         Form {
             if !facts.isEmpty {
                 let risk = ItemFacts.risk(for: item, facts: facts)
@@ -28,10 +33,11 @@ struct ItemInspector: View {
         }
         .formStyle(.grouped)
         // Again when the item is rescanned (its details are words from the scan) or the language changes.
-        .task(id: [AnyHashable(item), AnyHashable(ShownLanguage.shared.locale)]) {
-            let made = await ItemFacts.facts(for: item)
+        .task(id: key) {
+            let key = key
+            let facts = await ItemFacts.facts(for: item)
             guard !Task.isCancelled else { return }
-            facts = made
+            made = (key, facts)
         }
     }
 }

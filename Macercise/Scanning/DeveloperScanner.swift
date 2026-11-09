@@ -91,7 +91,7 @@ nonisolated enum DeveloperScanner {
     }
 
     @concurrent static func derivedData() async -> [ScanItem] {
-        let xcodeIsRunning = isXcodeRunning
+        let inUse = isXcodeRunning || isProcessRunning(buildTools)
         return directoryContents(xcode.appending(path: "DerivedData"))
             .filter { !$0.lastPathComponent.hasPrefix(".") }
             .map { folder in
@@ -100,7 +100,8 @@ nonisolated enum DeveloperScanner {
                 let project = name.split(separator: "-").dropLast().joined(separator: "-")
                 // Xcode writes an open project's builds and index here.
                 return ScanItem(url: folder, name: project.isEmpty ? name : project, size: allocatedSize(of: folder),
-                                lastUsed: modificationDate(folder), kind: .derivedData, isRunning: xcodeIsRunning, ownerBundleID: xcodeBundleID)
+                                lastUsed: modificationDate(folder), kind: .derivedData, isRunning: inUse, ownerBundleID: xcodeBundleID,
+                                usedByTools: buildTools)
             }
     }
 
