@@ -80,7 +80,7 @@ nonisolated enum BrowserScanner {
             return ScanItem(
                 url: first,
                 // A cache left behind by an uninstalled browser is pure waste, so it's listed too.
-                name: appURL == nil ? String(localized: "\(browser.name) (삭제된 앱)") : browser.name,
+                name: appURL == nil ? String(localized: "\(browser.name) (삭제된 앱)", bundle: .shown, locale: .shown) : browser.name,
                 size: dirs.reduce(0) { $0 + allocatedSize(of: $1) },
                 lastUsed: appURL.flatMap { NSMetadataItem(url: $0)?.value(forAttribute: NSMetadataItemLastUsedDateKey) as? Date },
                 kind: .browserCache,

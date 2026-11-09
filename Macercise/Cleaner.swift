@@ -53,7 +53,7 @@ nonisolated enum Cleaner {
         items.flatMap { item in
             // The scan may be minutes old; deleting a cache now would pull files out from under the app.
             if let owner = item.ownerBundleID, isAppRunning(owner) {
-                return [Failure(url: item.url, reason: String(localized: "실행 중이라 건너뛰었어요. 앱을 종료한 뒤 다시 정리하세요."))]
+                return [Failure(url: item.url, reason: String(localized: "실행 중이라 건너뛰었어요. 앱을 종료한 뒤 다시 정리하세요.", bundle: .shown, locale: .shown))]
             }
             // shortcut: command-line users (xcodebuild, swift build, Playwright tests) aren't apps, so they aren't checked; track their processes if one breaks mid-run.
             if let command = item.command {
@@ -73,7 +73,7 @@ nonisolated enum Cleaner {
 
     static func delete(_ urls: [URL], mode: Mode) -> [Failure] {
         urls.compactMap { url -> Failure? in
-            guard isAllowed(url) else { return Failure(url: url, reason: String(localized: "허용되지 않은 경로")) }
+            guard isAllowed(url) else { return Failure(url: url, reason: String(localized: "허용되지 않은 경로", bundle: .shown, locale: .shown)) }
             do {
                 switch mode {
                 case .trash: try FileManager.default.trashItem(at: url, resultingItemURL: nil)
@@ -86,7 +86,7 @@ nonisolated enum Cleaner {
             } catch where isPermissionError(error) {
                 // Apps installed by the App Store or an installer are owned by root; Finder asks for the admin password.
                 guard mode == .trash else {
-                    return Failure(url: url, reason: String(localized: "관리자 권한이 필요해요. '휴지통으로 이동'을 고르면 암호를 입력해 지울 수 있어요."))
+                    return Failure(url: url, reason: String(localized: "관리자 권한이 필요해요. '휴지통으로 이동'을 고르면 암호를 입력해 지울 수 있어요.", bundle: .shown, locale: .shown))
                 }
                 let script = "tell application \"Finder\" to delete (POSIX file \(appleScriptString(url.path(percentEncoded: false))) as alias)"
                 return run("/usr/bin/osascript -e \(shellQuote(script))").map { Failure(url: url, reason: $0) }

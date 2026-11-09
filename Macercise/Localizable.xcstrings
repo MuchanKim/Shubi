@@ -2343,22 +2343,6 @@
         }
       }
     },
-    "앱을 다시 열면 바뀌어요." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Takes effect the next time you open Macercise."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "앱을 다시 열면 바뀌어요."
-          }
-        }
-      }
-    },
     "앱이 남긴 데이터 %lld곳은 기본으로 남겨요. 삭제할 때 함께 지울 수도 있어요." : {
       "localizations" : {
         "en" : {

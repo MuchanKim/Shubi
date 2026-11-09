@@ -1,5 +1,14 @@
 import SwiftUI
 
+/// What a delete sheet deletes, fixed when it opens so a rescan underneath can't change it.
+/// Presented with `.sheet(item:)`: with `isPresented`, a sheet can open with the closure from before the targets were set.
+struct DeleteTargets: Identifiable {
+    let id = UUID()
+    let items: [ScanItem]
+    /// Some scans failed, so items they would have found aren't in `items`.
+    var missesFailedScans = false
+}
+
 struct DeleteSheet: View {
     let items: [ScanItem]
     /// Some scans failed, so items they would have found aren't in `items`.
@@ -19,7 +28,7 @@ struct DeleteSheet: View {
             if failures.isEmpty {
                 VStack(alignment: .leading, spacing: Layout.Spacing.xs) {
                     Text("\(items.count)개 항목 정리").font(.title3.weight(.semibold))
-                    Text("합계 \(items.reduce(0) { $0 + $1.size }.formatted(.byteCount(style: .file)))")
+                    Text("합계 \(items.reduce(0) { $0 + $1.size }.formatted(.byteCount(style: .file).locale(.shown)))")
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                     if missesFailedScans {
@@ -116,7 +125,7 @@ struct DeleteSheet: View {
         .frame(width: Layout.sheetWidth)
         .overlay {
             if isDeleting {
-                ProgressView(current.map { String(localized: "\($0) 정리 중…") } ?? "")
+                ProgressView(current.map { String(localized: "\($0) 정리 중…", bundle: .shown, locale: .shown) } ?? "")
                     .padding(Layout.cardPadding)
                     .background(.regularMaterial, in: .rect(cornerRadius: Layout.cornerRadius))
             }

@@ -8,7 +8,7 @@ struct SummaryView: View {
     @State private var results: [SidebarSection: SectionScan] = [:]
     @State private var disk: (total: Int64, available: Int64)?
     @State private var reloadCount = 0
-    @State private var showSmartClean = false
+    @State private var smartCleanTargets: DeleteTargets?
     @State private var opensSmartCleanAfterScan = false
     /// nil when the Trash can't be read without Full Disk Access.
     @State private var trashSize: Int64?
@@ -61,8 +61,8 @@ struct SummaryView: View {
         .toolbar {
             Button("다시 스캔", systemImage: "arrow.clockwise") { rescan() }
         }
-        .sheet(isPresented: $showSmartClean) {
-            DeleteSheet(items: smartCleanItems, missesFailedScans: results.values.contains(where: \.failed), onDeleted: { rescan(fillingTank: false) })
+        .sheet(item: $smartCleanTargets) { targets in
+            DeleteSheet(items: targets.items, missesFailedScans: targets.missesFailedScans, onDeleted: { rescan(fillingTank: false) })
         }
         .confirmationDialog("휴지통을 비울까요?", isPresented: $confirmEmptyTrash) {
             Button("휴지통 비우기", role: .destructive, action: emptyTrash)
@@ -73,6 +73,8 @@ struct SummaryView: View {
         } message: {
             Text(trashError ?? "")
         }
+        // A language change scans again without draining the tank: the item names inside are words.
+        .onChange(of: ShownLanguage.shared.locale) { reloadCount += 1 }
         .task(id: reloadCount) {
             await measureDisk()
             // A rescan during the measurement has started a newer task; this one must not reset its count.
@@ -110,7 +112,8 @@ struct SummaryView: View {
             guard !Task.isCancelled else { return }
             if opensSmartCleanAfterScan {
                 opensSmartCleanAfterScan = false
-                showSmartClean = !smartCleanItems.isEmpty
+                let items = smartCleanItems
+                smartCleanTargets = items.isEmpty ? nil : DeleteTargets(items: items, missesFailedScans: results.values.contains(where: \.failed))
             }
         }
     }
@@ -135,14 +138,14 @@ struct SummaryView: View {
             VStack(spacing: Layout.Spacing.xs) {
                 if let disk {
                     let used = disk.total - disk.available
-                    let percent = (Double(used) / Double(max(disk.total, 1))).formatted(.percent.precision(.fractionLength(0)))
-                    Text("\(disk.available.formatted(.byteCount(style: .file))) 남음")
+                    let percent = (Double(used) / Double(max(disk.total, 1))).formatted(.percent.precision(.fractionLength(0)).locale(.shown))
+                    Text("\(disk.available.formatted(.byteCount(style: .file).locale(.shown))) 남음")
                         .font(.title2.weight(.semibold))
-                    Text("\(disk.total.formatted(.byteCount(style: .file))) 중 \(percent) 사용")
+                    Text("\(disk.total.formatted(.byteCount(style: .file).locale(.shown))) 중 \(percent) 사용")
                         .foregroundStyle(.secondary)
                     if let cleaned {
                         // Cleaning moves items to the Trash by default: the space comes back only once it's emptied.
-                        Text("모두 정리하고 휴지통을 비우면 약 \(cleaned.formatted(.percent.precision(.fractionLength(0))))")
+                        Text("모두 정리하고 휴지통을 비우면 약 \(cleaned.formatted(.percent.precision(.fractionLength(0)).locale(.shown)))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -178,8 +181,8 @@ struct SummaryView: View {
                 Text("정리할 항목이 없어요").font(.callout).foregroundStyle(.primary.opacity(0.75))
             } else {
                 // "0GB" rather than the formatter's "Zero KB" before the first section lands.
-                let amount = total > 0 ? total.formatted(.byteCount(style: .file))
-                                       : total.formatted(.byteCount(style: .file, allowedUnits: .gb, spellsOutZero: false))
+                let amount = total > 0 ? total.formatted(.byteCount(style: .file).locale(.shown))
+                                       : total.formatted(.byteCount(style: .file, allowedUnits: .gb, spellsOutZero: false).locale(.shown))
                 // While scanning, the rising water is the only progress shown, and the total climbs as each section lands.
                 VStack(spacing: 0) {
                     Text(amount)
@@ -217,8 +220,8 @@ struct SummaryView: View {
         HStack(spacing: Layout.Spacing.m) {
             SymbolTile(systemName: "trash.fill", tint: .gray, size: Layout.iconTileSize)
             VStack(alignment: .leading, spacing: Layout.Spacing.xxs) {
-                Text(trashSize.flatMap { $0 > 0 ? String(localized: "휴지통 \($0.formatted(.byteCount(style: .file)))") : nil }
-                     ?? String(localized: "휴지통"))
+                Text(trashSize.flatMap { $0 > 0 ? String(localized: "휴지통 \($0.formatted(.byteCount(style: .file).locale(.shown)))", bundle: .shown, locale: .shown) : nil }
+                     ?? String(localized: "휴지통", bundle: .shown, locale: .shown))
                     .font(.callout.weight(.semibold))
                     .monospacedDigit()
                 Text("비우면 바로 공간이 생겨요").font(.caption).foregroundStyle(.secondary)
@@ -247,7 +250,7 @@ struct SummaryView: View {
                         Text(split.reclaimable, format: .byteCount(style: .file))
                     }
                     if let ratio = split.fractionOfDisk(split.reclaimable), !split.sections.isEmpty {
-                        Text("디스크의 \(ratio.formatted(.percent.precision(.fractionLength(0))))")
+                        Text("디스크의 \(ratio.formatted(.percent.precision(.fractionLength(0)).locale(.shown)))")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
@@ -258,8 +261,8 @@ struct SummaryView: View {
                     DiskBar(split: split, reclaimableFill: palette.accent)
                     HStack(spacing: Layout.Spacing.m) {
                         legendItem("정리 가능", palette.accent)
-                        legendItem("그 외 사용 \(split.otherUsed.formatted(.byteCount(style: .file)))", DiskBar.otherFill)
-                        legendItem("남음 \(disk.available.formatted(.byteCount(style: .file)))", DiskBar.freeFill)
+                        legendItem("그 외 사용 \(split.otherUsed.formatted(.byteCount(style: .file).locale(.shown)))", DiskBar.otherFill)
+                        legendItem("남음 \(disk.available.formatted(.byteCount(style: .file).locale(.shown)))", DiskBar.freeFill)
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -446,7 +449,7 @@ private struct DiskTank: View {
         .frame(width: Layout.ringSize, height: Layout.ringSize)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("디스크 사용률")
-        .accessibilityValue(fraction.map { $0.formatted(.percent.precision(.fractionLength(0))) } ?? "")
+        .accessibilityValue(fraction.map { $0.formatted(.percent.precision(.fractionLength(0)).locale(.shown)) } ?? "")
         // A new view starts its water at the bottom.
         .onAppear { water.move = water.move.retargeted(to: level, at: .now) }
         .onChange(of: level) { _, new in water.move = water.move.retargeted(to: new, at: .now) }
@@ -594,8 +597,8 @@ private struct SectionRow: View {
                 Spacer(minLength: Layout.Spacing.m)
                 if let share {
                     // A few MB of a large total would round to 0.0%, as if the section had nothing.
-                    Text(share > 0 && share < 0.001 ? "<\(0.001.formatted(.percent.precision(.fractionLength(1))))"
-                                                    : share.formatted(.percent.precision(.fractionLength(1))))
+                    Text(share > 0 && share < 0.001 ? "<\(0.001.formatted(.percent.precision(.fractionLength(1)).locale(.shown)))"
+                                                    : share.formatted(.percent.precision(.fractionLength(1)).locale(.shown)))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
@@ -612,8 +615,8 @@ private struct SectionRow: View {
     }
 
     private var subtitle: String {
-        guard let scan else { return String(localized: "스캔 중…") }
-        return scan.failed ? String(localized: "스캔하지 못했어요") : String(localized: "\(scan.items.count)개 항목")
+        guard let scan else { return String(localized: "스캔 중…", bundle: .shown, locale: .shown) }
+        return scan.failed ? String(localized: "스캔하지 못했어요", bundle: .shown, locale: .shown) : String(localized: "\(scan.items.count)개 항목", bundle: .shown, locale: .shown)
     }
 
     @ViewBuilder private var trailing: some View {

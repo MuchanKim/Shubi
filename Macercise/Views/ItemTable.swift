@@ -12,7 +12,9 @@ struct ItemTable<Key: Hashable>: View {
     @State private var isScanning = false
     @State private var failure: String?
     @State private var reloadCount = 0
-    @State private var showDelete = false
+    @State private var deleting: DeleteTargets?
+    /// The scan the list shows, to tell a language change (scan again in place) from a reload (start over).
+    @State private var loaded: ScanTrigger<Key>?
     @State private var sortOrder = [KeyPathComparator(\ScanItem.size, order: .reverse)]
     @State private var showInspector = true
     @State private var previewURL: URL?
@@ -42,7 +44,7 @@ struct ItemTable<Key: Hashable>: View {
                 .width(Layout.sizeColumnWidth)
             TableColumn("마지막 사용", value: \.lastUsedSort) { item in
                 if let lastUsed = item.lastUsed {
-                    Text(lastUsed.formatted(date: .abbreviated, time: .omitted))
+                    Text(lastUsed.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .shown)))
                 } else {
                     // No record isn't "never used": an app update or Spotlight reindex can clear it.
                     Text("기록 없음").help("앱 업데이트 등으로 사용 기록이 지워졌을 수 있어요.")
@@ -109,7 +111,9 @@ struct ItemTable<Key: Hashable>: View {
                     ScanCache.shared.invalidate(scanKey)
                     reloadCount += 1
                 }
-                Button("삭제…", role: .destructive) { showDelete = true }
+                Button("삭제…", role: .destructive) {
+                    deleting = DeleteTargets(items: selected)
+                }
                     .disabled(selected.isEmpty)
             }
             // 16, not the page margin: lines up with the table rows, which keep the system's inset.
@@ -117,24 +121,39 @@ struct ItemTable<Key: Hashable>: View {
             .padding(.vertical, Layout.Spacing.m)
             .background(.bar)
         }
-        .sheet(isPresented: $showDelete) {
-            DeleteSheet(items: selected) {
+        .sheet(item: $deleting) { targets in
+            DeleteSheet(items: targets.items) {
                 ScanCache.shared.invalidateAll()
                 reloadCount += 1
             }
         }
-        .task(id: ScanTrigger(key: scanKey, reload: reloadCount)) {
-            // Clear the previous scan's list, so its selection can't be deleted while this one runs.
-            items = []
-            selection = []
-            failure = nil
-            isScanning = true
+        // Restarted, and the superseded scan's result dropped, by any change of the key, a reload or the language.
+        .task(id: ScanTrigger(key: scanKey, reload: reloadCount, language: ShownLanguage.shared.locale.identifier)) {
+            let trigger = ScanTrigger(key: scanKey, reload: reloadCount, language: ShownLanguage.shared.locale.identifier)
+            // A language change scans again in place: the list keeps its selection and sort, and only the words change.
+            let inPlace = loaded.map { $0.key == trigger.key && $0.reload == trigger.reload } ?? false
+            if !inPlace {
+                // Clear the previous scan's list, so its selection can't be deleted while this one runs.
+                items = []
+                selection = []
+                failure = nil
+                isScanning = true
+                // The cleared list stands for no scan, so going back to it before this one lands starts over too.
+                loaded = nil
+            }
             let result = await ScanCache.shared.task(for: scanKey, scan: scan).result
             guard !Task.isCancelled else { return }
             switch result {
             case .success(let scanned):
                 items = scanned
-                selection = Set(scanned.filter(preselect).map(\.id))
+                if inPlace {
+                    selection.formIntersection(scanned.map(\.id))
+                } else {
+                    selection = Set(scanned.filter(preselect).map(\.id))
+                }
+                failure = nil
+                // Only a list that's on screen can be refreshed in place.
+                loaded = trigger
             case .failure(let error):
                 failure = error.localizedDescription
                 // Retry on the next visit, e.g. after the user accepts the Xcode license.
@@ -148,4 +167,5 @@ struct ItemTable<Key: Hashable>: View {
 private struct ScanTrigger<Key: Hashable>: Equatable {
     let key: Key
     let reload: Int
+    let language: String
 }

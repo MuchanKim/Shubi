@@ -1,3 +1,4 @@
+import Synchronization
 import SwiftUI
 
 enum Theme: String, CaseIterable, Identifiable {
@@ -66,22 +67,75 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         return allCases.first { $0 != .system && code.hasPrefix($0.rawValue) }
     }
 
-    /// What this run of the app shows: strings are looked up at launch, so a change needs a restart.
-    /// `MacerciseApp.init` reads it first, so it's captured at launch rather than when Settings first opens.
-    static let atLaunch = saved
-
-    func save() {
+    /// Saves the choice for the next launch and shows it now: strings come from its .lproj from here on,
+    /// and the windows rebuild in it.
+    func choose() {
         if self == .system {
             UserDefaults.standard.removeObject(forKey: "AppleLanguages")
         } else {
             UserDefaults.standard.set([rawValue], forKey: "AppleLanguages")
         }
+        // The system's own list, not the defaults search list, which still holds a launch argument's override.
+        let system = UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["AppleLanguages"] as? [String]
+        let code = self == .system ? Bundle.preferredLocalizations(from: Bundle.main.localizations, forPreferences: system).first ?? "ko" : rawValue
+        let locale = Locale(identifier: code)
+        chosenLanguage.withLock { $0 = (Bundle.strings(in: code) ?? .main, locale) }
+        // Scans keep the strings they were made with: screens scan again, in place, for names and details in the new language.
+        ScanCache.shared.invalidateAll()
+        ShownLanguage.shared.locale = locale
+    }
+}
+
+/// The language the windows show.
+@Observable final class ShownLanguage {
+    static let shared = ShownLanguage()
+    var locale = Locale.current
+
+    /// Called by every string lookup. On the main thread, in a view body, it makes that view redraw when the language
+    /// changes: only the strings change, and every view keeps its state.
+    nonisolated static func track() {
+        guard Thread.isMainThread else { return }
+        MainActor.assumeIsolated { _ = shared.locale }
+    }
+}
+
+/// The language chosen in Settings during this run; nil until then. Behind a lock: scanners localize off the main actor.
+private nonisolated let chosenLanguage = Mutex<(bundle: Bundle, locale: Locale)?>(nil)
+
+nonisolated extension Bundle {
+    /// For `String(localized:bundle:)`. Foundation looks strings up in the language settled at launch,
+    /// so every lookup names this bundle to follow a language chosen since without a restart.
+    static var shown: Bundle {
+        ShownLanguage.track()
+        return chosenLanguage.withLock { $0?.bundle } ?? .main
+    }
+
+    /// The app's strings in one language; nil for a language it doesn't have.
+    static func strings(in code: String) -> Bundle? {
+        main.path(forResource: code, ofType: "lproj").flatMap(Bundle.init(path:))
+    }
+}
+
+nonisolated extension Locale {
+    /// Passed with `Bundle.shown`: the bundle picks the strings, and the locale picks their plural forms.
+    static var shown: Locale {
+        ShownLanguage.track()
+        return chosenLanguage.withLock { $0?.locale } ?? .current
+    }
+}
+
+nonisolated extension LocalizedStringResource {
+    /// This string in the language chosen since launch, like `Bundle.shown`.
+    var shown: Self {
+        var copy = self
+        copy.locale = .shown
+        return copy
     }
 }
 
 struct SettingsView: View {
     @AppStorage(Theme.storageKey) private var theme = Theme.default
-    @State private var language: AppLanguage? = AppLanguage.atLaunch
+    @State private var language: AppLanguage? = AppLanguage.saved
 
     var body: some View {
         Form {
@@ -97,19 +151,16 @@ struct SettingsView: View {
                 Picker("언어", selection: $language) {
                     ForEach(AppLanguage.allCases) { $0.title.tag(Optional($0)) }
                 }
-                // No restart button: quitting in the middle of a cleanup would leave it half done.
-                if language != AppLanguage.atLaunch {
-                    Text("앱을 다시 열면 바뀌어요.").foregroundStyle(.secondary)
-                }
             }
         }
         .formStyle(.grouped)
+        .environment(\.locale, ShownLanguage.shared.locale)
         .frame(width: Layout.settingsWidth)
         // A grouped Form scrolls by default and comes up a little short; sized to its content it needs no scroller.
         .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
         .onChange(of: theme) { NSApp.appearance = theme.appearance }
-        .onChange(of: language) { language?.save() }
+        .onChange(of: language) { language?.choose() }
     }
 }
 

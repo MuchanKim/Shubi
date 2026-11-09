@@ -128,13 +128,13 @@ nonisolated func runProcess(_ executable: String, _ arguments: [String], timeout
         process.terminate()
         _ = exited.wait(timeout: .now() + 2)
         if group > 0, group != getpgrp() { kill(-group, SIGKILL) }
-        let limit = Duration.seconds(timeout).formatted(.units(allowed: [.minutes, .seconds], width: .wide))
-        throw CommandError(message: String(localized: "\(limit) 안에 끝나지 않아서 중단했어요"))
+        let limit = Duration.seconds(timeout).formatted(.units(allowed: [.minutes, .seconds], width: .wide).locale(.shown))
+        throw CommandError(message: String(localized: "\(limit) 안에 끝나지 않아서 중단했어요", bundle: .shown, locale: .shown))
     }
     guard process.terminationStatus == 0 else {
         let errors = String(decoding: (try? Data(contentsOf: logs[1])) ?? Data(), as: UTF8.self)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        throw CommandError(message: errors.isEmpty ? String(localized: "명령이 실패했어요 (종료 코드 \(process.terminationStatus))") : String(errors.suffix(300)))
+        throw CommandError(message: errors.isEmpty ? String(localized: "명령이 실패했어요 (종료 코드 \(process.terminationStatus))", bundle: .shown, locale: .shown) : String(errors.suffix(300)))
     }
     return (try? Data(contentsOf: logs[0])) ?? Data()
 }

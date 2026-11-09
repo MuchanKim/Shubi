@@ -11,7 +11,8 @@ nonisolated enum PackageCacheScanner {
         let cleanCommand: String?
     }
 
-    static let tools: [Tool] = [
+    /// Computed, so the localized names follow a language change at the next scan.
+    static var tools: [Tool] { [
         Tool(name: "Homebrew", binary: "brew", cachePath: "Library/Caches/Homebrew", cleanCommand: "brew cleanup --prune=all"),
         Tool(name: "npm", binary: "npm", cachePath: ".npm/_cacache", cleanCommand: "npm cache clean --force"),
         Tool(name: "Yarn", binary: "yarn", cachePath: "Library/Caches/Yarn", cleanCommand: "yarn cache clean"),
@@ -19,10 +20,10 @@ nonisolated enum PackageCacheScanner {
         Tool(name: "Bun", binary: "bun", cachePath: ".bun/install/cache", cleanCommand: "bun pm cache rm"),
         Tool(name: "pip", binary: "pip3", cachePath: "Library/Caches/pip", cleanCommand: "pip3 cache purge"),
         Tool(name: "CocoaPods", binary: "pod", cachePath: "Library/Caches/CocoaPods", cleanCommand: "pod cache clean --all"),
-        Tool(name: String(localized: "Go 모듈"), binary: "go", cachePath: "go/pkg/mod", cleanCommand: "go clean -modcache"),
+        Tool(name: String(localized: "Go 모듈", bundle: .shown, locale: .shown), binary: "go", cachePath: "go/pkg/mod", cleanCommand: "go clean -modcache"),
         Tool(name: "Swift Package Manager", binary: nil, cachePath: "Library/Caches/org.swift.swiftpm", cleanCommand: nil),
-        Tool(name: String(localized: "Playwright 브라우저"), binary: nil, cachePath: "Library/Caches/ms-playwright", cleanCommand: nil),
-    ]
+        Tool(name: String(localized: "Playwright 브라우저", bundle: .shown, locale: .shown), binary: nil, cachePath: "Library/Caches/ms-playwright", cleanCommand: nil),
+    ] }
 
     /// Top-level ~/Library/Caches folders listed here, so the app cache list doesn't repeat them.
     static let cacheFolderNames: Set<String> = Set(tools.compactMap { tool in
@@ -43,7 +44,7 @@ nonisolated enum PackageCacheScanner {
             let size = allocatedSize(of: folder)
             guard size > 0 else { return nil }
             return ScanItem(url: folder, name: folder.lastPathComponent, size: size, lastUsed: modificationDate(folder), kind: .cache,
-                            isOwnerUnknown: true, details: [Fact(label: String(localized: "위치"), value: "~/.cache")])
+                            isOwnerUnknown: true, details: [Fact(label: String(localized: "위치", bundle: .shown, locale: .shown), value: "~/.cache")])
         }
     }
 
@@ -62,7 +63,7 @@ nonisolated enum PackageCacheScanner {
                 // Tools without a clean command keep plain files; delete what's inside, like other caches.
                 targets: tool.cleanCommand == nil ? directoryContents(folder) : nil,
                 command: tool.cleanCommand,
-                details: tool.cleanCommand.map { [Fact(label: String(localized: "정리 명령"), value: $0)] } ?? []
+                details: tool.cleanCommand.map { [Fact(label: String(localized: "정리 명령", bundle: .shown, locale: .shown), value: $0)] } ?? []
             )
         }
     }

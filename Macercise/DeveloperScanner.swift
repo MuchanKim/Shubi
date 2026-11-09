@@ -29,7 +29,7 @@ nonisolated enum DeveloperScanner {
             let orphaned = isOrphaned(runtime: runtime, installedRuntimes: installed)
             return devices.map { device in
                 let folder = device.dataPath.map { URL(filePath: $0).deletingLastPathComponent() }
-                let status = orphaned ? String(localized: "사용할 수 없음 (런타임이 없어요)") : device.isAvailable ? String(localized: "사용 가능") : String(localized: "사용할 수 없음")
+                let status = orphaned ? String(localized: "사용할 수 없음 (런타임이 없어요)", bundle: .shown, locale: .shown) : device.isAvailable ? String(localized: "사용 가능", bundle: .shown, locale: .shown) : String(localized: "사용할 수 없음", bundle: .shown, locale: .shown)
                 return ScanItem(
                     url: folder ?? URL(filePath: "/simulator/\(device.udid)"),
                     name: "\(device.name) · \(runtimeName(runtime))",
@@ -40,7 +40,7 @@ nonisolated enum DeveloperScanner {
                     isRunning: device.state == "Booted",
                     isOrphaned: orphaned,
                     command: "xcrun simctl delete \(shellQuote(device.udid))",
-                    details: [Fact(label: String(localized: "상태"), value: status), Fact(label: "UDID", value: device.udid)]
+                    details: [Fact(label: String(localized: "상태", bundle: .shown, locale: .shown), value: status), Fact(label: "UDID", value: device.udid)]
                 )
             }
         }
@@ -66,7 +66,7 @@ nonisolated enum DeveloperScanner {
                 lastUsed: runtime.lastUsedAt,
                 kind: .runtime,
                 command: "xcrun simctl runtime delete \(shellQuote(runtime.identifier))",
-                details: [Fact(label: String(localized: "이 런타임을 쓰는 시뮬레이터"), value: String(localized: "\(users)개"),
+                details: [Fact(label: String(localized: "이 런타임을 쓰는 시뮬레이터", bundle: .shown, locale: .shown), value: String(localized: "\(users)개", bundle: .shown, locale: .shown),
                                      signal: .simulatorsUsingRuntime(users))]
             )
         }
@@ -110,11 +110,11 @@ nonisolated enum DeveloperScanner {
         let size = allocatedSize(of: folder)
         guard size > 0 else { return [] }
         let command = "xcrun simctl --set previews delete all"
-        return [ScanItem(url: folder, name: String(localized: "SwiftUI Preview 시뮬레이터"), size: size, lastUsed: modificationDate(folder),
+        return [ScanItem(url: folder, name: String(localized: "SwiftUI Preview 시뮬레이터", bundle: .shown, locale: .shown), size: size, lastUsed: modificationDate(folder),
                          kind: .previews,
                          // Xcode holds booted preview devices open while it runs.
                          isRunning: isXcodeRunning, ownerBundleID: xcodeBundleID,
-                         command: command, details: [Fact(label: String(localized: "정리 명령"), value: command)])]
+                         command: command, details: [Fact(label: String(localized: "정리 명령", bundle: .shown, locale: .shown), value: command)])]
     }
 
     /// Builds archived for distribution, in `Archives/<date>/<name>.xcarchive`.
@@ -148,7 +148,7 @@ nonisolated enum DeveloperScanner {
         do {
             return try decoder.decode(T.self, from: output)
         } catch {
-            throw CommandError(message: String(localized: "simctl 결과를 읽지 못했어요"))
+            throw CommandError(message: String(localized: "simctl 결과를 읽지 못했어요", bundle: .shown, locale: .shown))
         }
     }
 }

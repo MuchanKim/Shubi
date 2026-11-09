@@ -4,7 +4,6 @@ import SwiftUI
 struct MacerciseApp: App {
     init() {
         NSApplication.shared.appearance = Theme.saved.appearance
-        _ = AppLanguage.atLaunch
     }
 
     var body: some Scene {
@@ -28,15 +27,15 @@ enum SidebarSection: CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .summary: String(localized: "요약")
-        case .developer: String(localized: "개발자")
-        case .browser: String(localized: "브라우저 캐시")
-        case .appCache: String(localized: "앱 캐시")
-        case .orphanedData: String(localized: "삭제된 앱의 데이터")
-        case .packageCache: String(localized: "패키지 캐시")
-        case .logs: String(localized: "로그")
-        case .old: String(localized: "오래된 항목")
-        case .large: String(localized: "대용량 파일")
+        case .summary: String(localized: "요약", bundle: .shown, locale: .shown)
+        case .developer: String(localized: "개발자", bundle: .shown, locale: .shown)
+        case .browser: String(localized: "브라우저 캐시", bundle: .shown, locale: .shown)
+        case .appCache: String(localized: "앱 캐시", bundle: .shown, locale: .shown)
+        case .orphanedData: String(localized: "삭제된 앱의 데이터", bundle: .shown, locale: .shown)
+        case .packageCache: String(localized: "패키지 캐시", bundle: .shown, locale: .shown)
+        case .logs: String(localized: "로그", bundle: .shown, locale: .shown)
+        case .old: String(localized: "오래된 항목", bundle: .shown, locale: .shown)
+        case .large: String(localized: "대용량 파일", bundle: .shown, locale: .shown)
         }
     }
 
@@ -96,6 +95,8 @@ struct ContentView: View {
             }
             .navigationTitle(section?.title ?? "Macercise")
         }
+        // `Text` follows this; strings looked up in code redraw through `ShownLanguage.track()`.
+        .environment(\.locale, ShownLanguage.shared.locale)
         // Not an empty view for the other themes: that leaves the window transparent.
         .containerBackground(theme == .aurora ? AnyShapeStyle(Theme.auroraGradient) : AnyShapeStyle(.windowBackground), for: .window)
     }

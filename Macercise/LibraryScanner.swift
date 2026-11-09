@@ -32,7 +32,7 @@ nonisolated enum LibraryScanner {
                 ownerBundleID: ownerID,
                 isOrphaned: orphaned,
                 isOwnerUnknown: owner == nil && !orphaned,
-                details: owner.map { [Fact(label: String(localized: "앱"), value: $0.path(percentEncoded: false))] } ?? []
+                details: owner.map { [Fact(label: String(localized: "앱", bundle: .shown, locale: .shown), value: $0.path(percentEncoded: false))] } ?? []
             )
         }
     }
@@ -76,8 +76,8 @@ nonisolated enum LibraryScanner {
                 ownerBundleID: ownerID,
                 // Unmatched names (Miro keeps "RealtimeBoard") can't be checked for use, so smart clean skips them.
                 isOwnerUnknown: ownerID == nil,
-                details: [Fact(label: String(localized: "캐시 종류"), value: String(localized: "Electron 앱 캐시"))]
-                    + (owner.map { [Fact(label: String(localized: "앱"), value: $0.path(percentEncoded: false))] } ?? [])
+                details: [Fact(label: String(localized: "캐시 종류", bundle: .shown, locale: .shown), value: String(localized: "Electron 앱 캐시", bundle: .shown, locale: .shown))]
+                    + (owner.map { [Fact(label: String(localized: "앱", bundle: .shown, locale: .shown), value: $0.path(percentEncoded: false))] } ?? [])
             )
         }
     }
@@ -118,7 +118,7 @@ nonisolated enum LibraryScanner {
             let size = old.reduce(0) { $0 + allocatedSize(of: $1) }
             guard size > 0 else { return nil }
             return ScanItem(url: entry, name: entry.lastPathComponent, size: size, lastUsed: modificationDate(entry), kind: .log,
-                            targets: old, details: [Fact(label: String(localized: "30일 넘은 파일"), value: String(localized: "\(old.count)개"))])
+                            targets: old, details: [Fact(label: String(localized: "30일 넘은 파일", bundle: .shown, locale: .shown), value: String(localized: "\(old.count)개", bundle: .shown, locale: .shown))])
         }
     }
 
@@ -195,7 +195,7 @@ nonisolated enum LibraryScanner {
                 let size = allocatedSize(of: folder)
                 guard size > 0 else { return nil }
                 return ScanItem(url: folder, name: name, size: size, lastUsed: modificationDate(folder),
-                                kind: .appData, isOrphaned: true, details: [Fact(label: String(localized: "위치"), value: "~/Library/\(root)")])
+                                kind: .appData, isOrphaned: true, details: [Fact(label: String(localized: "위치", bundle: .shown, locale: .shown), value: "~/Library/\(root)")])
             }
         }
     }

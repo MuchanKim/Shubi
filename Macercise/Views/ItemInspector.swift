@@ -27,7 +27,12 @@ struct ItemInspector: View {
             }
         }
         .formStyle(.grouped)
-        .task(id: item.id) { facts = await ItemFacts.facts(for: item) }
+        // Again when the item is rescanned (its details are words from the scan) or the language changes.
+        .task(id: [AnyHashable(item), AnyHashable(ShownLanguage.shared.locale)]) {
+            let made = await ItemFacts.facts(for: item)
+            guard !Task.isCancelled else { return }
+            facts = made
+        }
     }
 }
 

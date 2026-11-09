@@ -23,7 +23,7 @@ nonisolated enum ItemFacts {
     @concurrent static func facts(for item: ScanItem) async -> [Fact] {
         var facts: [Fact] = []
         func add(_ label: LocalizedStringResource, _ value: String?, signal: Fact.Signal? = nil) {
-            if let value, !value.isEmpty { facts.append(Fact(label: String(localized: label), value: value, signal: signal)) }
+            if let value, !value.isEmpty { facts.append(Fact(label: String(localized: label.shown), value: value, signal: signal)) }
         }
         let values = try? item.url.resourceValues(forKeys: [.contentTypeKey, .creationDateKey, .isUbiquitousItemKey])
 
@@ -39,35 +39,35 @@ nonisolated enum ItemFacts {
             add("카테고리", (info["LSApplicationCategoryType"] as? String)?.replacing("public.app-category.", with: ""))
             let receipt = item.url.appending(path: "Contents/_MASReceipt/receipt").path(percentEncoded: false)
             let fromAppStore = FileManager.default.fileExists(atPath: receipt)
-            add("설치 경로", fromAppStore ? "App Store" : String(localized: "App Store 외부"), signal: .fromAppStore(fromAppStore))
+            add("설치 경로", fromAppStore ? "App Store" : String(localized: "App Store 외부", bundle: .shown, locale: .shown), signal: .fromAppStore(fromAppStore))
             let components = [
-                ("Contents/Library/SystemExtensions", String(localized: "시스템 확장"), true),
-                ("Contents/Library/Extensions", String(localized: "커널 확장"), true),
-                ("Contents/Library/LaunchDaemons", String(localized: "백그라운드 데몬"), false),
-                ("Contents/Library/LaunchServices", String(localized: "권한 도우미"), false),
+                ("Contents/Library/SystemExtensions", String(localized: "시스템 확장", bundle: .shown, locale: .shown), true),
+                ("Contents/Library/Extensions", String(localized: "커널 확장", bundle: .shown, locale: .shown), true),
+                ("Contents/Library/LaunchDaemons", String(localized: "백그라운드 데몬", bundle: .shown, locale: .shown), false),
+                ("Contents/Library/LaunchServices", String(localized: "권한 도우미", bundle: .shown, locale: .shown), false),
             ].filter { FileManager.default.fileExists(atPath: item.url.appending(path: $0.0).path(percentEncoded: false)) }
             add("시스템 구성요소", components.map(\.1).joined(separator: ", "),
                 signal: .systemComponents(hasExtensions: components.contains(where: \.2)))
             let library = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Library").path(percentEncoded: false)
             add("남은 데이터", item.leftovers.map { "~/Library" + $0.path(percentEncoded: false).dropFirst(library.count) }.joined(separator: "\n"))
         case .browserCache, .cache:
-            add("앱 설치 상태", item.isOrphaned ? String(localized: "삭제됨") : item.isOwnerUnknown ? String(localized: "알 수 없음") : String(localized: "설치됨"))
-            add("들어 있는 항목", String(localized: "\(item.targets.count)개"))
+            add("앱 설치 상태", item.isOrphaned ? String(localized: "삭제됨", bundle: .shown, locale: .shown) : item.isOwnerUnknown ? String(localized: "알 수 없음", bundle: .shown, locale: .shown) : String(localized: "설치됨", bundle: .shown, locale: .shown))
+            add("들어 있는 항목", String(localized: "\(item.targets.count)개", bundle: .shown, locale: .shown))
         case .simulator, .appData, .runtime, .deviceSupport, .derivedData, .previews, .packageCache, .archive, .log:
             break
         case .document, .largeFile:
-            add("만든 날짜", values?.creationDate?.formatted(date: .abbreviated, time: .omitted))
-            add("iCloud", values?.isUbiquitousItem == true ? String(localized: "동기화됨") : nil, signal: .inICloud)
+            add("만든 날짜", values?.creationDate?.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .shown)))
+            add("iCloud", values?.isUbiquitousItem == true ? String(localized: "동기화됨", bundle: .shown, locale: .shown) : nil, signal: .inICloud)
             let source = (NSMetadataItem(url: item.url)?.value(forAttribute: NSMetadataItemWhereFromsKey) as? [String])?.first
             add("다운로드 출처", source, signal: source.map(Fact.Signal.downloadSource))
         }
         facts += item.details
-        add("크기", item.size.formatted(.byteCount(style: .file)))
+        add("크기", item.size.formatted(.byteCount(style: .file).locale(.shown)))
         add("마지막 사용", item.lastUsed.map { date in
             let days = Calendar.current.dateComponents([.day], from: date, to: .now).day ?? 0
-            return String(localized: "\(date.formatted(date: .abbreviated, time: .omitted)) (\(days)일 전)")
-        } ?? String(localized: "기록 없음"))
-        if item.isRunning { add("상태", String(localized: "실행 중")) }
+            return String(localized: "\(date.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .shown))) (\(days)일 전)", bundle: .shown, locale: .shown)
+        } ?? String(localized: "기록 없음", bundle: .shown, locale: .shown))
+        if item.isRunning { add("상태", String(localized: "실행 중", bundle: .shown, locale: .shown)) }
         add("경로", item.url.path(percentEncoded: false))
         return facts
     }
@@ -99,7 +99,7 @@ nonisolated enum ItemFacts {
 
         switch item.kind {
         case .browserCache:
-            let base = String(localized: "로그인, 북마크, 방문 기록, 비밀번호는 캐시와 따로 저장돼서 그대로 남아요.")
+            let base = String(localized: "로그인, 북마크, 방문 기록, 비밀번호는 캐시와 따로 저장돼서 그대로 남아요.", bundle: .shown, locale: .shown)
             return item.isOrphaned
                 ? DeletionRisk(level: .safe, title: "앱이 이미 삭제된 캐시예요",
                                reason: "다시 쓰일 일이 없는 공간이에요. \(base)")
@@ -120,7 +120,7 @@ nonisolated enum ItemFacts {
                 : DeletionRisk(level: .caution, title: "테스트 앱과 데이터가 함께 지워져요",
                                reason: "설치한 앱과 데이터가 사라져요. 같은 기기는 Xcode에서 언제든 다시 만들 수 있어요.")
         case .runtime:
-            let users = String(localized: "\(simulatorsUsingRuntime)개")
+            let users = String(localized: "\(simulatorsUsingRuntime)개", bundle: .shown, locale: .shown)
             return DeletionRisk(level: simulatorsUsingRuntime == 0 ? .safe : .caution, title: "다시 받으려면 몇 GB를 내려받아야 해요",
                                 reason: "이 런타임을 쓰는 시뮬레이터 \(users)를 쓸 수 없게 돼요. Xcode 설정의 Components에서 다시 받을 수 있어요.")
         case .deviceSupport:
@@ -146,8 +146,8 @@ nonisolated enum ItemFacts {
             }
             // Cleaner removes the bundle; the ~/Library folders named after its bundle ID go only if the user opts in on the sheet.
             let kept = item.leftovers.isEmpty
-                ? String(localized: "설정과 데이터는 남아서 다시 설치하면 이어 쓸 수 있어요.")
-                : String(localized: "앱이 남긴 데이터 \(item.leftovers.count)곳은 기본으로 남겨요. 삭제할 때 함께 지울 수도 있어요.")
+                ? String(localized: "설정과 데이터는 남아서 다시 설치하면 이어 쓸 수 있어요.", bundle: .shown, locale: .shown)
+                : String(localized: "앱이 남긴 데이터 \(item.leftovers.count)곳은 기본으로 남겨요. 삭제할 때 함께 지울 수도 있어요.", bundle: .shown, locale: .shown)
             if let components {
                 return DeletionRisk(level: .caution, title: "백그라운드 도우미가 남을 수 있어요",
                                     reason: "시스템 폴더의 구성요소(\(components.list))는 앱을 지워도 남을 수 있어요. \(kept)")
@@ -192,8 +192,8 @@ nonisolated struct DeletionRisk: Sendable {
     /// The only init, so literal titles and reasons are always looked up in the string catalog.
     init(level: Level, title: LocalizedStringResource, reason: LocalizedStringResource) {
         self.level = level
-        self.title = String(localized: title)
-        self.reason = String(localized: reason)
+        self.title = String(localized: title.shown)
+        self.reason = String(localized: reason.shown)
     }
 }
 
@@ -201,17 +201,17 @@ extension ScanItem.Kind {
     /// Shown as "종류"; nil means the file's own type description is used.
     nonisolated var label: String? {
         switch self {
-        case .browserCache: String(localized: "브라우저 캐시 폴더")
-        case .cache: String(localized: "앱 캐시 폴더")
-        case .appData: String(localized: "앱 데이터 폴더")
-        case .simulator: String(localized: "iOS 시뮬레이터")
-        case .runtime: String(localized: "시뮬레이터 런타임")
-        case .deviceSupport: String(localized: "기기 디버깅 심볼")
-        case .derivedData: String(localized: "Xcode 빌드 데이터")
-        case .previews: String(localized: "SwiftUI Preview 시뮬레이터")
-        case .packageCache: String(localized: "패키지 캐시")
-        case .archive: String(localized: "Xcode 아카이브")
-        case .log: String(localized: "로그")
+        case .browserCache: String(localized: "브라우저 캐시 폴더", bundle: .shown, locale: .shown)
+        case .cache: String(localized: "앱 캐시 폴더", bundle: .shown, locale: .shown)
+        case .appData: String(localized: "앱 데이터 폴더", bundle: .shown, locale: .shown)
+        case .simulator: String(localized: "iOS 시뮬레이터", bundle: .shown, locale: .shown)
+        case .runtime: String(localized: "시뮬레이터 런타임", bundle: .shown, locale: .shown)
+        case .deviceSupport: String(localized: "기기 디버깅 심볼", bundle: .shown, locale: .shown)
+        case .derivedData: String(localized: "Xcode 빌드 데이터", bundle: .shown, locale: .shown)
+        case .previews: String(localized: "SwiftUI Preview 시뮬레이터", bundle: .shown, locale: .shown)
+        case .packageCache: String(localized: "패키지 캐시", bundle: .shown, locale: .shown)
+        case .archive: String(localized: "Xcode 아카이브", bundle: .shown, locale: .shown)
+        case .log: String(localized: "로그", bundle: .shown, locale: .shown)
         case .app, .document, .largeFile: nil
         }
     }
