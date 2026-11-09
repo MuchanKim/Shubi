@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Macercise
+@testable import Shubi
 
 /// Runs every scanner against this Mac: results vary, but IDs must be unique (Table requires it).
 struct ScannerTests {
@@ -25,7 +25,7 @@ struct ScannerTests {
 
     /// A lone "Cache" folder isn't enough: only a Chromium profile's caches are taken, and never its settings.
     @Test func chromiumCachesNeedAChromiumProfile() throws {
-        let root = FileManager.default.temporaryDirectory.appending(path: "Macercise-electron-\(UUID().uuidString)")
+        let root = FileManager.default.temporaryDirectory.appending(path: "Shubi-electron-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         let electron = root.appending(path: "Code"), other = root.appending(path: "Other")
         for path in ["Code/Cache", "Code/GPUCache", "Code/Service Worker/CacheStorage", "Code/User", "Other/Cache"] {
@@ -37,7 +37,7 @@ struct ScannerTests {
 
     /// A folder an app still writes to keeps its recent files; a quiet one goes whole.
     @Test func oldLogsKeepRecentFiles() throws {
-        let root = FileManager.default.temporaryDirectory.appending(path: "Macercise-logs-\(UUID().uuidString)")
+        let root = FileManager.default.temporaryDirectory.appending(path: "Shubi-logs-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         let cutoff = Date.now.addingTimeInterval(-LibraryScanner.logRetention)
         func file(_ path: String, daysAgo: Double) throws -> URL {
@@ -142,7 +142,7 @@ struct FileSizeTests {
     /// Final Cut, Parallels and UTM may be uninstalled, so macOS no longer knows their folders are packages.
     @Test(arguments: ["Movie.app/Contents", "Project.fcpbundle/Media", "Windows.pvm", "Linux.utm/Data", "Win.vmwarevm"])
     func filesInsidePackagesAreNotLoose(_ package: String) throws {
-        let root = FileManager.default.temporaryDirectory.appending(path: "Macercise-pkg-\(UUID().uuidString)")
+        let root = FileManager.default.temporaryDirectory.appending(path: "Shubi-pkg-\(UUID().uuidString)")
         let inside = root.appending(path: "\(package)/clip.mov")
         let loose = root.appending(path: "Movies/clip.mov")
         defer { try? FileManager.default.removeItem(at: root) }
@@ -155,7 +155,7 @@ struct FileSizeTests {
     }
 
     @Test func fileSizeIsItsAllocatedSize() throws {
-        let file = FileManager.default.temporaryDirectory.appending(path: "Macercise-size-\(UUID().uuidString)")
+        let file = FileManager.default.temporaryDirectory.appending(path: "Shubi-size-\(UUID().uuidString)")
         try Data(count: 100_000).write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
         #expect(allocatedSize(of: file) >= 100_000)

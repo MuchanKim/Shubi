@@ -8,19 +8,19 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Macercise"
+            "value" : "Shubi"
           }
         }
       }
     },
     "NSAppleEventsUsageDescription" : {
-      "comment" : "Shown when Macercise asks to control Finder.",
+      "comment" : "Shown when Shubi asks to control Finder.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Macercise asks Finder to move apps that need administrator access to the Trash."
+            "value" : "Shubi asks Finder to move apps that need administrator access to the Trash."
           }
         },
         "ko" : {

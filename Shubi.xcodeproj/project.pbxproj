@@ -16,37 +16,37 @@
 			containerPortal = D19DA3892F66E8AF00832E48 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = D19DA3902F66E8AF00832E48;
-			remoteInfo = Macercise;
+			remoteInfo = Shubi;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		D19DA3912F66E8AF00832E48 /* Macercise.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Macercise.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		D19DA39E2F66E8B000832E48 /* MacerciseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacerciseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D19DA3912F66E8AF00832E48 /* Shubi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Shubi.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D19DA39E2F66E8B000832E48 /* ShubiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShubiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		D1BC49512F6FBBD500A95ED5 /* Exceptions for "Macercise" folder in "Macercise" target */ = {
+		D1BC49512F6FBBD500A95ED5 /* Exceptions for "Shubi" folder in "Shubi" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = D19DA3902F66E8AF00832E48 /* Macercise */;
+			target = D19DA3902F66E8AF00832E48 /* Shubi */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		D19DA3932F66E8AF00832E48 /* Macercise */ = {
+		D19DA3932F66E8AF00832E48 /* Shubi */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				D1BC49512F6FBBD500A95ED5 /* Exceptions for "Macercise" folder in "Macercise" target */,
+				D1BC49512F6FBBD500A95ED5 /* Exceptions for "Shubi" folder in "Shubi" target */,
 			);
-			path = Macercise;
+			path = Shubi;
 			sourceTree = "<group>";
 		};
-		D19DA3A12F66E8B000832E48 /* MacerciseTests */ = {
+		D19DA3A12F66E8B000832E48 /* ShubiTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MacerciseTests;
+			path = ShubiTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -73,8 +73,8 @@
 		D19DA3882F66E8AF00832E48 = {
 			isa = PBXGroup;
 			children = (
-				D19DA3932F66E8AF00832E48 /* Macercise */,
-				D19DA3A12F66E8B000832E48 /* MacerciseTests */,
+				D19DA3932F66E8AF00832E48 /* Shubi */,
+				D19DA3A12F66E8B000832E48 /* ShubiTests */,
 				D19DA3922F66E8AF00832E48 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -82,8 +82,8 @@
 		D19DA3922F66E8AF00832E48 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D19DA3912F66E8AF00832E48 /* Macercise.app */,
-				D19DA39E2F66E8B000832E48 /* MacerciseTests.xctest */,
+				D19DA3912F66E8AF00832E48 /* Shubi.app */,
+				D19DA39E2F66E8B000832E48 /* ShubiTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -91,9 +91,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D19DA3902F66E8AF00832E48 /* Macercise */ = {
+		D19DA3902F66E8AF00832E48 /* Shubi */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D19DA3B22F66E8B000832E48 /* Build configuration list for PBXNativeTarget "Macercise" */;
+			buildConfigurationList = D19DA3B22F66E8B000832E48 /* Build configuration list for PBXNativeTarget "Shubi" */;
 			buildPhases = (
 				D19DA38D2F66E8AF00832E48 /* Sources */,
 				D19DA38E2F66E8AF00832E48 /* Frameworks */,
@@ -104,19 +104,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				D19DA3932F66E8AF00832E48 /* Macercise */,
+				D19DA3932F66E8AF00832E48 /* Shubi */,
 			);
-			name = Macercise;
+			name = Shubi;
 			packageProductDependencies = (
 				D1A0CAFE2F70000000000002 /* Lottie */,
 			);
-			productName = Macercise;
-			productReference = D19DA3912F66E8AF00832E48 /* Macercise.app */;
+			productName = Shubi;
+			productReference = D19DA3912F66E8AF00832E48 /* Shubi.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D19DA39D2F66E8B000832E48 /* MacerciseTests */ = {
+		D19DA39D2F66E8B000832E48 /* ShubiTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D19DA3B52F66E8B000832E48 /* Build configuration list for PBXNativeTarget "MacerciseTests" */;
+			buildConfigurationList = D19DA3B52F66E8B000832E48 /* Build configuration list for PBXNativeTarget "ShubiTests" */;
 			buildPhases = (
 				D19DA39A2F66E8B000832E48 /* Sources */,
 				D19DA39B2F66E8B000832E48 /* Frameworks */,
@@ -128,13 +128,13 @@
 				D19DA3A02F66E8B000832E48 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				D19DA3A12F66E8B000832E48 /* MacerciseTests */,
+				D19DA3A12F66E8B000832E48 /* ShubiTests */,
 			);
-			name = MacerciseTests;
+			name = ShubiTests;
 			packageProductDependencies = (
 			);
-			productName = MacerciseTests;
-			productReference = D19DA39E2F66E8B000832E48 /* MacerciseTests.xctest */;
+			productName = ShubiTests;
+			productReference = D19DA39E2F66E8B000832E48 /* ShubiTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -156,7 +156,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D19DA38C2F66E8AF00832E48 /* Build configuration list for PBXProject "Macercise" */;
+			buildConfigurationList = D19DA38C2F66E8AF00832E48 /* Build configuration list for PBXProject "Shubi" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -174,8 +174,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D19DA3902F66E8AF00832E48 /* Macercise */,
-				D19DA39D2F66E8B000832E48 /* MacerciseTests */,
+				D19DA3902F66E8AF00832E48 /* Shubi */,
+				D19DA39D2F66E8B000832E48 /* ShubiTests */,
 			);
 		};
 /* End PBXProject section */
@@ -217,7 +217,7 @@
 /* Begin PBXTargetDependency section */
 		D19DA3A02F66E8B000832E48 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D19DA3902F66E8AF00832E48 /* Macercise */;
+			target = D19DA3902F66E8AF00832E48 /* Shubi */;
 			targetProxy = D19DA39F2F66E8B000832E48 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -347,7 +347,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Macercise.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Shubi.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -356,7 +356,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Macercise/Info.plist;
+				INFOPLIST_FILE = Shubi/Info.plist;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "관리자 권한이 필요한 앱을 휴지통으로 옮길 때 Finder에 요청해요.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 moolab. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -364,7 +364,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.moo.Macercise;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moo.Shubi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -379,7 +379,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Macercise.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Shubi.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -388,7 +388,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Macercise/Info.plist;
+				INFOPLIST_FILE = Shubi/Info.plist;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "관리자 권한이 필요한 앱을 휴지통으로 옮길 때 Finder에 요청해요.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 moolab. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -396,7 +396,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.moo.Macercise;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moo.Shubi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -417,14 +417,14 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.moo.MacerciseTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moo.ShubiTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Macercise.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Macercise";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Shubi.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Shubi";
 			};
 			name = Debug;
 		};
@@ -438,21 +438,21 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.moo.MacerciseTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moo.ShubiTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Macercise.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Macercise";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Shubi.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Shubi";
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D19DA38C2F66E8AF00832E48 /* Build configuration list for PBXProject "Macercise" */ = {
+		D19DA38C2F66E8AF00832E48 /* Build configuration list for PBXProject "Shubi" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D19DA3B02F66E8B000832E48 /* Debug */,
@@ -461,7 +461,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D19DA3B22F66E8B000832E48 /* Build configuration list for PBXNativeTarget "Macercise" */ = {
+		D19DA3B22F66E8B000832E48 /* Build configuration list for PBXNativeTarget "Shubi" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D19DA3B32F66E8B000832E48 /* Debug */,
@@ -470,7 +470,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D19DA3B52F66E8B000832E48 /* Build configuration list for PBXNativeTarget "MacerciseTests" */ = {
+		D19DA3B52F66E8B000832E48 /* Build configuration list for PBXNativeTarget "ShubiTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D19DA3B62F66E8B000832E48 /* Debug */,

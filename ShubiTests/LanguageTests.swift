@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Macercise
+@testable import Shubi
 
 struct LanguageTests {
     // Looks up through each .lproj directly: switching the app-wide language here would race the suites

@@ -1,12 +1,12 @@
 # Third-party notices
 
-Macercise's own code is under the [MIT License](LICENSE). It includes or depends on the following, under their own licenses.
+Shubi's own code is under the [MIT License](LICENSE). It includes or depends on the following, under their own licenses.
 
 ## Disk animation
 
 "water filling Glass orb" by Aneesh Ravi, from [LottieFiles](https://lottiefiles.com/animations/water-filling-glass-orb-gy945anVCM).
 
-Macercise splits it into two files, `Macercise/Resources/DiskTank.json` (the water) and `Macercise/Resources/DiskTankGlass.json` (the glass), leaves out its bubbles and shadow, trims the canvas below the orb, and sets the water's height and the water and glass colors at runtime. The files and their modifications are distributed under the Lottie Simple License below, not under the MIT License.
+Shubi splits it into two files, `Shubi/Resources/DiskTank.json` (the water) and `Shubi/Resources/DiskTankGlass.json` (the glass), leaves out its bubbles and shadow, trims the canvas below the orb, and sets the water's height and the water and glass colors at runtime. The files and their modifications are distributed under the Lottie Simple License below, not under the MIT License.
 
 ```
 Lottie Simple License (FL 9.13.21)
@@ -21,4 +21,4 @@ FILES ARE PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED
 
 ## Lottie for iOS
 
-[lottie-ios](https://github.com/airbnb/lottie-ios), fetched through [lottie-spm](https://github.com/airbnb/lottie-spm). Copyright 2018 Airbnb, Inc. Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0); the full license text ships in the app's credits (`Macercise/Resources/Credits.html`).
+[lottie-ios](https://github.com/airbnb/lottie-ios), fetched through [lottie-spm](https://github.com/airbnb/lottie-spm). Copyright 2018 Airbnb, Inc. Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0); the full license text ships in the app's credits (`Shubi/Resources/Credits.html`).

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Macercise
+@testable import Shubi
 
 struct ItemFactsTests {
     let calculator = ScanItem(url: URL(filePath: "/System/Applications/Calculator.app"), name: "Calculator",

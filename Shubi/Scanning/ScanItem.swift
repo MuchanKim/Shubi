@@ -110,7 +110,7 @@ nonisolated func runProcess(_ executable: String, _ arguments: [String], timeout
     // A tool that prompts (pod, yarn) reads EOF and fails instead of waiting forever.
     process.standardInput = FileHandle.nullDevice
     // Files, not pipes: a child that outlives a timed-out parent can't keep a read open.
-    let logs = ["out", "err"].map { FileManager.default.temporaryDirectory.appending(path: "Macercise-\(UUID().uuidString).\($0)") }
+    let logs = ["out", "err"].map { FileManager.default.temporaryDirectory.appending(path: "Shubi-\(UUID().uuidString).\($0)") }
     defer { logs.forEach { try? FileManager.default.removeItem(at: $0) } }
     let exited = DispatchSemaphore(value: 0)
     process.terminationHandler = { _ in exited.signal() }

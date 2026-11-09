@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Macercise
+@testable import Shubi
 
 struct CleanerTests {
     let home = URL(filePath: "/Users/tester")
@@ -14,9 +14,9 @@ struct CleanerTests {
         ("/Users/tester/.cache/puppeteer", .cache),
         ("/Applications/Foo.app", .app),
         ("/Users/tester/Applications/Bar.app", .app),
-        ("/Users/tester/Library/Developer/Xcode/DerivedData/Macercise-abc", .developer),
+        ("/Users/tester/Library/Developer/Xcode/DerivedData/Shubi-abc", .developer),
         ("/Users/tester/Library/Developer/Xcode/iOS DeviceSupport/iPhone17,3 26.5.2", .developer),
-        ("/Users/tester/Library/Developer/Xcode/Archives/2026-01-02/Macercise 1-2-26.xcarchive", .developer),
+        ("/Users/tester/Library/Developer/Xcode/Archives/2026-01-02/Shubi 1-2-26.xcarchive", .developer),
         ("/Users/tester/Library/Application Support/com.gone.app", .appData),
         ("/Users/tester/Library/Containers/com.gone.app", .appData),
         ("/Users/tester/Library/Saved Application State/com.gone.app.savedState", .appData),
@@ -128,16 +128,16 @@ struct CleanerTests {
     }
 
     /// delete() checks against the real home, so the fixture must live there, where its kind is allowed:
-    /// caches by default, `Applications/MacerciseTests` for an app, `Library/Application Support` for an app's data.
-    private func makeFileInRealHome(_ folder: String = "Library/Caches/MacerciseTests") throws -> URL {
+    /// caches by default, `Applications/ShubiTests` for an app, `Library/Application Support` for an app's data.
+    private func makeFileInRealHome(_ folder: String = "Library/Caches/ShubiTests") throws -> URL {
         let dir = FileManager.default.homeDirectoryForCurrentUser.appending(path: folder)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let file = dir.appending(path: "MacerciseTests-" + UUID().uuidString)
+        let file = dir.appending(path: "ShubiTests-" + UUID().uuidString)
         try Data("x".utf8).write(to: file)
         return file
     }
 
-    private func makeAppInRealHome() throws -> URL { try makeFileInRealHome("Applications/MacerciseTests") }
+    private func makeAppInRealHome() throws -> URL { try makeFileInRealHome("Applications/ShubiTests") }
     private func makeAppDataInRealHome() throws -> URL { try makeFileInRealHome("Library/Application Support") }
 
     @Test func commandItemsRunTheirCommand() {
@@ -201,7 +201,7 @@ struct CleanerTests {
 
     /// A log written to after the scan is current again and stays; an untouched one goes.
     @Test func logWrittenSinceTheScanStays() throws {
-        let folder = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Library/Logs/MacerciseTests-\(UUID().uuidString)")
+        let folder = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Library/Logs/ShubiTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         let written = folder.appending(path: "written.log"), untouched = folder.appending(path: "untouched.log")
@@ -235,7 +235,7 @@ struct CleanerTests {
     /// Command-line builds and other apps sharing the files count as using them, like the owner.
     @Test func itemInUseByAToolOrASharingAppIsSkipped() throws {
         let file = try makeFileInRealHome()
-        let building = ScanItem(url: file, name: "cache", size: 1, lastUsed: nil, kind: .cache, usedByTools: ["Macercise"])
+        let building = ScanItem(url: file, name: "cache", size: 1, lastUsed: nil, kind: .cache, usedByTools: ["Shubi"])
         #expect(building.isInUse)
         #expect(Cleaner.clean([building], mode: .permanent).map(\.url) == [file])
         let shared = ScanItem(url: file, name: "cache", size: 1, lastUsed: nil, kind: .browserCache,
@@ -264,7 +264,7 @@ struct CleanerTests {
 
     /// A tool's child that ignores SIGTERM must not keep running after the UI says "stopped".
     @Test func timeoutStopsChildrenThatIgnoreTerm() throws {
-        let pidFile = FileManager.default.temporaryDirectory.appending(path: "Macercise-pid-\(UUID().uuidString)")
+        let pidFile = FileManager.default.temporaryDirectory.appending(path: "Shubi-pid-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: pidFile) }
         let script = "(trap '' TERM; exec sleep 300) & echo $! > \(shellQuote(pidFile.path(percentEncoded: false))); wait"
         #expect(Cleaner.run(script, timeout: 3) != nil)

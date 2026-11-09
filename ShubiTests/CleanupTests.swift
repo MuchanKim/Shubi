@@ -1,5 +1,5 @@
 import Testing
-@testable import Macercise
+@testable import Shubi
 
 @MainActor
 struct CleanupTests {

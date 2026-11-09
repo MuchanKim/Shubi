@@ -73,7 +73,7 @@ struct ContentView: View {
                 case .large: LargeFilesView()
                 }
             }
-            .navigationTitle(section?.title ?? "Macercise")
+            .navigationTitle(section?.title ?? "Shubi")
         }
         // Here, not on the summary: the user may have left it while the clean ran.
         .alert(Text("\(Cleanup.shared.smartCleanFailures.count)개 항목을 지우지 못했어요"),

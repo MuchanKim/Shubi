@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Macercise
+@testable import Shubi
 
 struct DiskTankTests {
     let start = Date(timeIntervalSinceReferenceDate: 0)

@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct MacerciseApp: App {
+struct ShubiApp: App {
     init() {
         NSApplication.shared.appearance = Theme.saved.appearance
     }

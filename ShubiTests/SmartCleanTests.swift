@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Macercise
+@testable import Shubi
 
 struct SmartCleanTests {
     @Test(arguments: [ScanItem.Kind.browserCache, .cache, .derivedData, .deviceSupport, .packageCache])
@@ -37,7 +37,7 @@ struct SmartCleanTests {
         ("Figma.dmg", .largeFile),
         ("com.gone.app", .appData),
         ("iOS 17.2", .runtime),
-        ("Macercise 1.0.xcarchive", .archive),
+        ("Shubi 1.0.xcarchive", .archive),
         ("zoom.us", .log),
     ])
     func userFilesAndRuntimesAreExcluded(_ name: String, _ kind: ScanItem.Kind) {

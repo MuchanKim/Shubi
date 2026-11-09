@@ -1,11 +1,11 @@
-<h1 align="center">Macercise</h1>
+<h1 align="center">Shubi</h1>
 
 <p align="center">
-  <strong>A workout for your Mac's disk: find the caches and leftovers that pile up, and free the space.</strong>
+  <strong>Swoosh your Mac's disk clean: find the caches and leftovers that pile up, and free the space.</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/MuchanKim/Macercise/releases"><img src="https://img.shields.io/badge/Version-1.0-007EC6?style=flat&amp;logo=github&amp;logoColor=white" alt="App version 1.0"></a>
+  <a href="https://github.com/MuchanKim/Shubi/releases"><img src="https://img.shields.io/badge/Version-1.0-007EC6?style=flat&amp;logo=github&amp;logoColor=white" alt="App version 1.0"></a>
   <a href="#download"><img src="https://img.shields.io/badge/macOS-26%2B-000000?style=flat&amp;logo=apple&amp;logoColor=white" alt="Requires macOS 26 or later"></a>
   <a href="#build-from-source"><img src="https://img.shields.io/badge/Swift-6-F05138?style=flat&amp;logo=swift&amp;logoColor=white" alt="Swift 6"></a>
   <a href="https://github.com/airbnb/lottie-spm"><img src="https://img.shields.io/badge/Lottie-4.6.1-00DDB3?style=flat" alt="Lottie 4.6.1 dependency"></a>
@@ -13,17 +13,19 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MuchanKim/Macercise/releases">Releases</a> ·
+  <a href="https://github.com/MuchanKim/Shubi/releases">Releases</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#what-gets-deleted">What gets deleted</a> ·
   <a href="#build-from-source">Build from source</a>
 </p>
 
 <p align="center">
-  <img src="docs/media/overview.png" width="760" alt="Macercise overview: disk usage as water in a glass orb, Smart Clean, and the space each section can free">
+  <img src="docs/media/overview.png" width="760" alt="Shubi overview: disk usage as water in a glass orb, Smart Clean, and the space each section can free">
 </p>
 
-Macercise scans the places where a Mac quietly fills up — Xcode build data, simulators, browser and app caches, package manager downloads, old logs, data left behind by deleted apps — and shows how much each one costs. One tap on **Smart Clean** removes what apps rebuild on their own; everything else is listed for you to review.
+Shubi scans the places where a Mac quietly fills up — Xcode build data, simulators, browser and app caches, package manager downloads, old logs, data left behind by deleted apps — and shows how much each one costs. One tap on **Smart Clean** removes what apps rebuild on their own; everything else is listed for you to review.
+
+The name comes from the Korean *shu~ biwoda*: "swoosh, empty it."
 
 ## See it in action
 
@@ -47,8 +49,8 @@ Macercise scans the places where a Mac quietly fills up — Xcode build data, si
 | **Themes and languages** | System, Light, Dark and Aurora. English and Korean, switched live without restarting. |
 
 <p align="center">
-  <img src="docs/media/light.png" width="400" alt="Macercise in the light theme">
-  <img src="docs/media/dark.png" width="400" alt="Macercise in the dark theme">
+  <img src="docs/media/light.png" width="400" alt="Shubi in the light theme">
+  <img src="docs/media/dark.png" width="400" alt="Shubi in the dark theme">
 </p>
 
 ## What gets deleted
@@ -64,13 +66,13 @@ A cleaner earns trust by what it leaves alone.
 
 **Requires macOS 26 or later.**
 
-Check [GitHub Releases](https://github.com/MuchanKim/Macercise/releases) for notarized builds. The first release is being prepared; you can [build from source](#build-from-source) in the meantime.
+Check [GitHub Releases](https://github.com/MuchanKim/Shubi/releases) for notarized builds. The first release is being prepared; you can [build from source](#build-from-source) in the meantime.
 
 Full Disk Access is optional. Without it, Safari's caches and sandboxed apps' containers aren't scanned; the sidebar shows how to grant it.
 
 ## Quick start
 
-1. Open Macercise. The overview scans every cleanup section and shows what can be freed; Old Items and Large Files are scanned when you open them.
+1. Open Shubi. The overview scans every cleanup section and shows what can be freed; Old Items and Large Files are scanned when you open them.
 2. Click **Smart Clean** to clear rebuildable caches in one tap.
 3. Open a section in the sidebar to review the rest, check the inspector, and delete what you choose.
 4. Empty the Trash from the overview when you're sure.
@@ -79,22 +81,22 @@ Full Disk Access is optional. Without it, Safari's caches and sandboxed apps' co
 
 Use Xcode with the macOS 26 SDK or later. The app target uses **Swift 6 language mode** with default main-actor isolation; builds use **Xcode 27**.
 
-1. Clone this repository and open `Macercise.xcodeproj`.
+1. Clone this repository and open `Shubi.xcodeproj`.
 2. Let Swift Package Manager resolve [Lottie](https://github.com/airbnb/lottie-spm).
-3. Select the **Macercise** scheme and **My Mac**.
+3. Select the **Shubi** scheme and **My Mac**.
 4. Choose your own development team in **Signing & Capabilities**, then run the app.
 
 Run the tests in both languages from the repository root:
 
 ```sh
-xcodebuild -project Macercise.xcodeproj -scheme Macercise -destination 'platform=macOS' -testLanguage en test
-xcodebuild -project Macercise.xcodeproj -scheme Macercise -destination 'platform=macOS' -testLanguage ko test
+xcodebuild -project Shubi.xcodeproj -scheme Shubi -destination 'platform=macOS' -testLanguage en test
+xcodebuild -project Shubi.xcodeproj -scheme Shubi -destination 'platform=macOS' -testLanguage ko test
 ```
 
 ## Project layout
 
 ```
-Macercise/
+Shubi/
   App/            Entry point, main window, sidebar sections
   Scanning/       Scanners, scan items and their facts, the shared scan cache
   Cleaning/       Deletion policy (allow-list, Trash or permanent) and the cleanup coordinator
@@ -102,11 +104,11 @@ Macercise/
   Design/         Spacing, themes, per-theme colors
   Views/          Summary, section screens, settings, shared views
   Resources/      Assets, Lottie files, string catalogs, credits
-MacerciseTests/   Swift Testing suites
+ShubiTests/   Swift Testing suites
 ```
 
 ## License
 
-Macercise is available under the [MIT License](LICENSE).
+Shubi is available under the [MIT License](LICENSE).
 
-The disk animation and Lottie come with their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The app shows the same notices in **About Macercise**.
+The disk animation and Lottie come with their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The app shows the same notices in **About Shubi**.
