@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		D1A0CAFE2F70000000000003 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = D1A0CAFE2F70000000000002 /* Lottie */; };
+		D1A0CAFE2F70000000000006 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = D1A0CAFE2F70000000000005 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D1A0CAFE2F70000000000003 /* Lottie in Frameworks */,
+				D1A0CAFE2F70000000000006 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,6 +111,7 @@
 			name = Shubi;
 			packageProductDependencies = (
 				D1A0CAFE2F70000000000002 /* Lottie */,
+				D1A0CAFE2F70000000000005 /* Sparkle */,
 			);
 			productName = Shubi;
 			productReference = D19DA3912F66E8AF00832E48 /* Shubi.app */;
@@ -168,6 +171,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				D1A0CAFE2F70000000000001 /* XCRemoteSwiftPackageReference "lottie-spm" */,
+				D1A0CAFE2F70000000000004 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D19DA3922F66E8AF00832E48 /* Products */;
@@ -358,6 +362,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Shubi/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "관리자 권한이 필요한 앱을 휴지통으로 옮길 때 Finder에 요청해요.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 moolab. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -391,6 +396,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Shubi/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "관리자 권한이 필요한 앱을 휴지통으로 옮길 때 Finder에 요청해요.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 moolab. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -492,6 +498,14 @@
 				minimumVersion = 4.5.2;
 			};
 		};
+		D1A0CAFE2F70000000000004 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -499,6 +513,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D1A0CAFE2F70000000000001 /* XCRemoteSwiftPackageReference "lottie-spm" */;
 			productName = Lottie;
+		};
+		D1A0CAFE2F70000000000005 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D1A0CAFE2F70000000000004 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

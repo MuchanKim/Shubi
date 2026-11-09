@@ -22,3 +22,7 @@ FILES ARE PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED
 ## Lottie for iOS
 
 [lottie-ios](https://github.com/airbnb/lottie-ios), fetched through [lottie-spm](https://github.com/airbnb/lottie-spm). Copyright 2018 Airbnb, Inc. Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0); the full license text ships in the app's credits (`Shubi/Resources/Credits.html`).
+
+## Sparkle
+
+[Sparkle](https://github.com/sparkle-project/Sparkle) checks for and installs updates. Copyright (c) 2006-2013 Andy Matuschak and the other copyright holders in its license, under an MIT-style license together with the licenses of the code it includes; the full text ships in the app's credits (`Shubi/Resources/Credits.html`).
