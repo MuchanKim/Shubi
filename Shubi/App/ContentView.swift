@@ -55,9 +55,12 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            Sidebar(selection: $section)
             // In the sidebar, not above the screen: a table that doesn't start at the toolbar draws its header under a blur band.
-            .safeAreaInset(edge: .bottom) { FullDiskAccessBanner() }
+            // Below the list, not a safe-area inset over it: the banner's tint is translucent, so rows scrolled under it showed through.
+            VStack(spacing: 0) {
+                Sidebar(selection: $section)
+                FullDiskAccessBanner()
+            }
             .navigationSplitViewColumnWidth(min: Layout.sidebarMinWidth, ideal: Layout.sidebarIdealWidth, max: Layout.sidebarMaxWidth)
         } detail: {
             Group {
