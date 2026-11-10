@@ -27,7 +27,7 @@
   <img src="docs/media/overview.png" width="760" alt="Shubi overview: disk usage as water in a glass orb, Smart Clean, and the space each section can free">
 </p>
 
-Shubi scans the places where a Mac quietly fills up — Xcode build data, simulators, browser and app caches, package manager downloads, old logs, data left behind by deleted apps — and shows how much each one costs. One tap on **Smart Clean** removes what apps rebuild on their own; everything else is listed for you to review.
+Shubi scans the places where a Mac quietly fills up — Xcode build data, simulators, browser and app caches, package manager downloads, old logs, data left behind by deleted apps, and the conversations, generated files and caches AI tools keep — and shows how much each one costs. One tap on **Smart Clean** removes what apps rebuild on their own; everything else is listed for you to review.
 
 Why Shubi? Its maker loves the Shrimp Beef Burger at McDonald's Korea, known there as the *Shubi* burger.
 
@@ -65,6 +65,7 @@ A cleaner earns trust by what it leaves alone.
 - **Smart Clean** takes only caches and build data that apps and tools rebuild, plus SwiftUI preview simulators that Xcode recreates. It scans again first and skips anything in use: caches of running apps and of apps sharing them (Firefox editions), DerivedData and the SwiftPM cache while Xcode or a command-line build (`xcodebuild`, `swift build`) runs, and Playwright's browsers while any Node process runs. It deletes permanently, so the space comes back at once.
 - **Everything else** goes through a confirmation sheet. Files — archives, app data, your own files — move to the Trash by default. Simulators, runtimes and package caches with their own cleanup command (`simctl`, `brew cleanup`, `npm cache clean`, …) are removed by that command and skip the Trash; the sheet says so.
 - **File deletion is allow-listed by kind** (`Cleaner.isAllowed`): a cache only inside the caches, build data only inside Xcode's folders, an app's data only as a whole data folder, and your documents only as your own files. A cache folder that links into your documents or another app's data can't take them with it.
+- **AI tools' data is allow-listed per tool.** Shubi deletes only the paths it names for each tool — sessions, generated files, caches and logs — never their settings, credentials, skills or databases, and never through Smart Clean. Folders it can't vouch for (an unknown tool's sessions, a tool's own state, anything unreadable or linked elsewhere) are shown for review only. Right before deleting it checks each session again and skips one written to in the last ten minutes or grown since the scan.
 - **One deletion at a time**, across Smart Clean, delete sheets and emptying the Trash in every window, and every screen refreshes when it ends.
 
 ## Download
