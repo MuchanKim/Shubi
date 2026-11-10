@@ -49,6 +49,7 @@ Why Shubi? Its maker loves the Shrimp Beef Burger at McDonald's Korea, known the
 | **Caches** | Browser caches, app caches including Electron apps', and Homebrew, npm, Yarn, pnpm, Bun, pip, CocoaPods, Go, SwiftPM and Playwright downloads. |
 | **Leftovers and logs** | Data folders of apps you've deleted, and logs untouched for 30 days. |
 | **Your own files** | Apps and documents you haven't opened in a while, and large files, listed for review only. |
+| **AI tools** | Conversations, generated images, caches and logs that Claude Code, Codex, Gemini CLI, Antigravity, Cursor, T3 Code and Aside keep, by tool and kind, including what deleted tools left behind. Settings, credentials and databases are never offered for deletion. |
 | **Inspector** | What each item is, who uses it, and what deleting it would cost. |
 | **Themes and languages** | System, Light, Dark and Aurora. English and Korean, switched live without restarting. |
 
@@ -76,7 +77,7 @@ Full Disk Access is optional. Without it, Safari's caches and sandboxed apps' co
 
 ## Quick start
 
-1. Open Shubi. The overview scans every cleanup section and shows what can be freed; Old Items and Large Files are scanned when you open them.
+1. Open Shubi. The overview scans every cleanup section and shows what can be freed; Old Items, Large Files and AI Tools are scanned when you open them.
 2. Click **Smart Clean** to clear rebuildable caches in one tap.
 3. Open a section in the sidebar to review the rest, check the inspector, and delete what you choose.
 4. Empty the Trash from the overview when you're sure.

@@ -6,6 +6,8 @@ struct ItemTable<Key: Hashable>: View {
     let scanKey: Key
     let scan: @Sendable () async throws -> [ScanItem]
     var preselect: (ScanItem) -> Bool = { _ in false }
+    /// The AI section's tool and kind columns, in place of the location.
+    var showsTool = false
 
     @State private var items: [ScanItem] = []
     @State private var selection: Set<ScanItem.ID> = []
@@ -20,8 +22,8 @@ struct ItemTable<Key: Hashable>: View {
     @State private var previewURL: URL?
     @AppStorage(Theme.storageKey) private var theme = Theme.default
 
-    // Running apps can't be deleted safely, so they never count as selected.
-    private var selected: [ScanItem] { items.filter { selection.contains($0.id) && !$0.isRunning } }
+    // Running apps can't be deleted safely and review-only rows never are, so neither counts as selected.
+    private var selected: [ScanItem] { items.filter { selection.contains($0.id) && $0.canDelete } }
     private var inspected: ScanItem? { selection.count == 1 ? items.first { selection.contains($0.id) } : nil }
 
     var body: some View {
@@ -33,11 +35,13 @@ struct ItemTable<Key: Hashable>: View {
                         .resizable()
                         .frame(width: 18, height: 18)
                     Text(item.name)
-                    if item.isRunning {
+                    if item.isReviewOnly {
+                        Text("보기 전용").font(.caption).foregroundStyle(.secondary).help("Shubi는 이 항목을 지우지 않아요")
+                    } else if item.isRunning {
                         Text("실행 중").font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                .opacity(item.isRunning ? 0.5 : 1)
+                .opacity(item.canDelete ? 1 : 0.5)
             }
             .width(min: Layout.nameColumnMinWidth)
             TableColumn("크기", value: \.size) { Text($0.size, format: .byteCount(style: .file)) }
@@ -51,12 +55,21 @@ struct ItemTable<Key: Hashable>: View {
                 }
             }
             .width(Layout.dateColumnWidth)
-            TableColumn("위치") {
-                Text($0.url.deletingLastPathComponent().path(percentEncoded: false))
-                    .truncationMode(.middle)
-                    .foregroundStyle(.secondary)
+            // Two `if`s, not `if`/`else`: the branches' columns sort differently, which `buildEither` can't join.
+            if showsTool {
+                TableColumn("도구", value: \.aiToolName)
+                    .width(min: Layout.tagColumnMinWidth, ideal: Layout.tagColumnIdealWidth)
+                TableColumn("종류", value: \.aiCategoryName)
+                    .width(min: Layout.tagColumnMinWidth, ideal: Layout.tagColumnIdealWidth)
             }
-            .width(min: Layout.locationColumnMinWidth)
+            if !showsTool {
+                TableColumn("위치") {
+                    Text($0.url.deletingLastPathComponent().path(percentEncoded: false))
+                        .truncationMode(.middle)
+                        .foregroundStyle(.secondary)
+                }
+                .width(min: Layout.locationColumnMinWidth)
+            }
         }
         // Let the aurora gradient show through instead of a white slab.
         .scrollContentBackground(theme == .aurora ? .hidden : .automatic)
@@ -153,7 +166,7 @@ struct ItemTable<Key: Hashable>: View {
                 if inPlace {
                     selection.formIntersection(scanned.map(\.id))
                 } else {
-                    selection = Set(scanned.filter(preselect).map(\.id))
+                    selection = Set(scanned.filter { $0.canDelete && preselect($0) }.map(\.id))
                 }
                 failure = nil
                 // Only a list that's on screen can be refreshed in place.

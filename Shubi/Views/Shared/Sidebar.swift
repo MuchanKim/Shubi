@@ -20,6 +20,8 @@ struct Sidebar: View {
         (nil, [.summary]),
         ("정리", [.developer, .browser, .appCache, .orphanedData, .packageCache, .logs]),
         ("내 파일", [.old, .large]),
+        // Last, so ⌘1…⌘9 keep pointing where they did.
+        ("AI", [.ai]),
     ]
 
     /// Display order, which ↑/↓ and ⌘-numbers follow.
@@ -28,6 +30,12 @@ struct Sidebar: View {
         assert(order.count == SidebarSection.allCases.count && Set(order) == Set(SidebarSection.allCases), "every section appears in the sidebar once")
         return order
     }()
+
+    /// ⌘1…⌘9 in sidebar order, then ⌘0 for the tenth; none after that rather than a key that doesn't exist.
+    static func shortcut(for section: SidebarSection) -> KeyboardShortcut? {
+        guard let index = order.firstIndex(of: section), index < 10 else { return nil }
+        return KeyboardShortcut(KeyEquivalent(Character(String((index + 1) % 10))))
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -113,8 +121,8 @@ private struct SidebarRow: View {
         .buttonStyle(.plain)
         // The sidebar's `focusEffectDisabled` also hides this button's ring, so `background` draws one.
         .focused(focus, equals: .row(section))
-        // ⌘1…⌘9 in sidebar order: the buttons don't get the arrow-key navigation a List had.
-        .keyboardShortcut(KeyEquivalent(Character(String(Sidebar.order.firstIndex(of: section)! + 1))))
+        // ⌘-numbers in sidebar order: the buttons don't get the arrow-key navigation a List had.
+        .keyboardShortcut(Sidebar.shortcut(for: section))
         .onHover { isHovered = $0 }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
