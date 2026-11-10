@@ -27,7 +27,7 @@
   <img src="docs/media/overview.png" width="760" alt="Shubi overview: disk usage as water in a glass orb, Smart Clean, and the space each section can free">
 </p>
 
-Shubi scans the places where a Mac quietly fills up — Xcode build data, simulators, browser and app caches, package manager downloads, old logs, data left behind by deleted apps — and shows how much each one costs. One tap on **Smart Clean** removes what apps rebuild on their own; everything else is listed for you to review.
+Shubi scans the places where a Mac quietly fills up — Xcode build data, simulators, browser and app caches, package manager downloads, old logs, data left behind by deleted apps, and the conversations, generated files and caches AI tools keep — and shows how much each one costs. One tap on **Smart Clean** removes what apps rebuild on their own; everything else is listed for you to review.
 
 Why Shubi? Its maker loves the Shrimp Beef Burger at McDonald's Korea, known there as the *Shubi* burger.
 
@@ -49,6 +49,7 @@ Why Shubi? Its maker loves the Shrimp Beef Burger at McDonald's Korea, known the
 | **Caches** | Browser caches, app caches including Electron apps', and Homebrew, npm, Yarn, pnpm, Bun, pip, CocoaPods, Go, SwiftPM and Playwright downloads. |
 | **Leftovers and logs** | Data folders of apps you've deleted, and logs untouched for 30 days. |
 | **Your own files** | Apps and documents you haven't opened in a while, and large files, listed for review only. |
+| **AI tools** | Conversations, generated images, caches and logs that Claude Code, Codex, Gemini CLI, Antigravity, Cursor, T3 Code and Aside keep, by tool and kind, including what deleted tools left behind. Settings, credentials and databases are never offered for deletion. |
 | **Inspector** | What each item is, who uses it, and what deleting it would cost. |
 | **Themes and languages** | System, Light, Dark and Aurora. English and Korean, switched live without restarting. |
 
@@ -64,6 +65,7 @@ A cleaner earns trust by what it leaves alone.
 - **Smart Clean** takes only caches and build data that apps and tools rebuild, plus SwiftUI preview simulators that Xcode recreates. It scans again first and skips anything in use: caches of running apps and of apps sharing them (Firefox editions), DerivedData and the SwiftPM cache while Xcode or a command-line build (`xcodebuild`, `swift build`) runs, and Playwright's browsers while any Node process runs. It deletes permanently, so the space comes back at once.
 - **Everything else** goes through a confirmation sheet. Files — archives, app data, your own files — move to the Trash by default. Simulators, runtimes and package caches with their own cleanup command (`simctl`, `brew cleanup`, `npm cache clean`, …) are removed by that command and skip the Trash; the sheet says so.
 - **File deletion is allow-listed by kind** (`Cleaner.isAllowed`): a cache only inside the caches, build data only inside Xcode's folders, an app's data only as a whole data folder, and your documents only as your own files. A cache folder that links into your documents or another app's data can't take them with it.
+- **AI tools' data is allow-listed per tool.** Shubi deletes only the paths it names for each tool — sessions, generated files, caches and logs — never their settings, credentials, skills or databases, and never through Smart Clean. Folders it can't vouch for (an unknown tool's sessions, a tool's own state, anything unreadable or linked elsewhere) are shown for review only. Right before deleting it checks each session again and skips one written to in the last ten minutes or grown since the scan.
 - **One deletion at a time**, across Smart Clean, delete sheets and emptying the Trash in every window, and every screen refreshes when it ends.
 
 ## Download
@@ -76,7 +78,7 @@ Full Disk Access is optional. Without it, Safari's caches and sandboxed apps' co
 
 ## Quick start
 
-1. Open Shubi. The overview scans every cleanup section and shows what can be freed; Old Items and Large Files are scanned when you open them.
+1. Open Shubi. The overview scans every cleanup section and shows what can be freed; Old Items, Large Files and AI Tools are scanned when you open them.
 2. Click **Smart Clean** to clear rebuildable caches in one tap.
 3. Open a section in the sidebar to review the rest, check the inspector, and delete what you choose.
 4. Empty the Trash from the overview when you're sure.

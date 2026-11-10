@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SidebarSection: CaseIterable, Identifiable {
-    case summary, developer, browser, appCache, orphanedData, packageCache, logs, old, large
+    case summary, developer, browser, appCache, orphanedData, packageCache, logs, old, large, ai
 
     var id: Self { self }
 
@@ -16,6 +16,7 @@ enum SidebarSection: CaseIterable, Identifiable {
         case .logs: String(localized: "로그", bundle: .shown, locale: .shown)
         case .old: String(localized: "오래된 항목", bundle: .shown, locale: .shown)
         case .large: String(localized: "대용량 파일", bundle: .shown, locale: .shown)
+        case .ai: String(localized: "AI 도구", bundle: .shown, locale: .shown)
         }
     }
 
@@ -30,6 +31,7 @@ enum SidebarSection: CaseIterable, Identifiable {
         case .logs: "doc.text"
         case .old: "clock.arrow.circlepath"
         case .large: "externaldrive"
+        case .ai: "text.bubble"
         }
     }
 
@@ -45,6 +47,7 @@ enum SidebarSection: CaseIterable, Identifiable {
         case .logs: .indigo
         case .old: .pink
         case .large: .red
+        case .ai: .cyan
         }
     }
 }
@@ -55,9 +58,12 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            Sidebar(selection: $section)
             // In the sidebar, not above the screen: a table that doesn't start at the toolbar draws its header under a blur band.
-            .safeAreaInset(edge: .bottom) { FullDiskAccessBanner() }
+            // Below the list, not a safe-area inset over it: the banner's tint is translucent, so rows scrolled under it showed through.
+            VStack(spacing: 0) {
+                Sidebar(selection: $section)
+                FullDiskAccessBanner()
+            }
             .navigationSplitViewColumnWidth(min: Layout.sidebarMinWidth, ideal: Layout.sidebarIdealWidth, max: Layout.sidebarMaxWidth)
         } detail: {
             Group {
@@ -71,6 +77,7 @@ struct ContentView: View {
                 case .logs: LogsView()
                 case .old: OldItemsView()
                 case .large: LargeFilesView()
+                case .ai: AIToolsView()
                 }
             }
             .navigationTitle(section?.title ?? "Shubi")

@@ -1,9 +1,12 @@
 import AppKit
 
 nonisolated struct ScanItem: Identifiable, Hashable, Sendable {
-    enum Kind: Sendable {
+    enum Kind: Hashable, Sendable {
         case browserCache, cache, appData, app, document, largeFile
         case simulator, runtime, deviceSupport, derivedData, previews, packageCache, archive, log
+        /// An AI tool's file. The only case with a payload: which tool and what it holds decide whether Shubi may delete it,
+        /// and only the AI section reads it. Other code asks `isReviewOnly`.
+        case aiData(AIEntry)
     }
 
     let url: URL
@@ -46,8 +49,18 @@ nonisolated struct ScanItem: Identifiable, Hashable, Sendable {
         case .previews: return true
         // Archives hold the only copy of a shipped build's symbols; old logs don't come back once deleted.
         case .app, .document, .largeFile, .appData, .simulator, .runtime, .archive, .log: return false
+        // Conversations and outputs are the user's work; the caches sit next to them, so the section is reviewed by hand.
+        case .aiData: return false
         }
     }
+
+    /// Listed so the user sees the space, never deleted by Shubi.
+    var isReviewOnly: Bool {
+        if case .aiData(let entry) = kind { entry.reviewOnly != nil } else { false }
+    }
+
+    /// What a list may select and preselect.
+    var canDelete: Bool { !isRunning && !isReviewOnly }
 
     init(url: URL, name: String, size: Int64, lastUsed: Date?, kind: Kind, targets: [URL]? = nil,
          isRunning: Bool = false, ownerBundleID: String? = nil, sharedWith: [String] = [], usedByTools: [String] = [], isOrphaned: Bool = false, isOwnerUnknown: Bool = false,

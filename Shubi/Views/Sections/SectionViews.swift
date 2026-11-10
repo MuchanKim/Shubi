@@ -19,6 +19,32 @@ struct BrowserCacheView: View {
     }
 }
 
+struct AIToolsView: View {
+    @State private var scope = AIScanner.Scope.all
+    @State private var unusedDays = 30
+
+    var body: some View {
+        let cutoff = Date.now.addingTimeInterval(-Double(unusedDays) * 86_400)
+        // ItemTable leaves running and review-only rows out of the preselection itself.
+        ItemTable(scanKey: scope, scan: { [scope] in await AIScanner.scan(scope) },
+                  preselect: { $0.lastUsed.map { $0 < cutoff } ?? false }, showsTool: true)
+            // As in BrowserCacheView: recreating the table reapplies the preselection to the cached scan.
+            .id(unusedDays)
+            .toolbar {
+                Picker("도구", selection: $scope) {
+                    Text("모든 도구").tag(AIScanner.Scope.all)
+                    ForEach(AITool.allCases) { Text(verbatim: $0.spec.name).tag(AIScanner.Scope.tool($0)) }
+                    Text("알 수 없는 도구").tag(AIScanner.Scope.unknown)
+                }
+                Picker("미사용 기준", selection: $unusedDays) {
+                    Text("7일 이상 미사용").tag(7)
+                    Text("30일 이상 미사용").tag(30)
+                    Text("90일 이상 미사용").tag(90)
+                }
+            }
+    }
+}
+
 struct OldItemsView: View {
     enum Target: CaseIterable {
         case apps, documents

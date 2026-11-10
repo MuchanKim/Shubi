@@ -13,11 +13,15 @@ struct Sidebar: View {
     }
 
     @FocusState private var focus: Focus?
+    /// The list got focus from a click or a ⌘-number, not from Tab: no ring then, so a click leaves a plain card.
+    @State private var isListFocusFromPointer = false
 
     private static let groups: [(title: LocalizedStringResource?, sections: [SidebarSection])] = [
         (nil, [.summary]),
         ("정리", [.developer, .browser, .appCache, .orphanedData, .packageCache, .logs]),
         ("내 파일", [.old, .large]),
+        // Last, so ⌘1…⌘9 keep pointing where they did.
+        ("AI", [.ai]),
     ]
 
     /// Display order, which ↑/↓ and ⌘-numbers follow.
@@ -26,6 +30,12 @@ struct Sidebar: View {
         assert(order.count == SidebarSection.allCases.count && Set(order) == Set(SidebarSection.allCases), "every section appears in the sidebar once")
         return order
     }()
+
+    /// ⌘1…⌘9 in sidebar order, then ⌘0 for the tenth; none after that rather than a key that doesn't exist.
+    static func shortcut(for section: SidebarSection) -> KeyboardShortcut? {
+        guard let index = order.firstIndex(of: section), index < 10 else { return nil }
+        return KeyboardShortcut(KeyEquivalent(Character(String((index + 1) % 10))))
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -42,7 +52,12 @@ struct Sidebar: View {
                                     .accessibilityAddTraits(.isHeader)
                             }
                             ForEach(group.sections) { section in
-                                SidebarRow(section: section, isSelected: section == selection, focus: $focus) {
+                                SidebarRow(section: section, isSelected: section == selection, focus: $focus,
+                                           hasKeyboardListFocus: focus == .list && !isListFocusFromPointer) {
+                                    // Only a plain key (Space, Return on a Tab-focused row) is the keyboard; a click or a
+                                    // ⌘-number leaves a plain card. Focus alone can't tell them apart.
+                                    let event = NSApp.currentEvent
+                                    isListFocusFromPointer = !(event?.type == .keyDown && event?.modifierFlags.contains(.command) == false)
                                     focus = .list
                                     selection = section
                                 }
@@ -56,8 +71,9 @@ struct Sidebar: View {
             }
             .focusable()
             .focused($focus, equals: .list)
-            // The selected card's color shows focus instead of a ring around the whole sidebar.
+            // The selected card's ring shows keyboard focus instead of a ring around the whole sidebar.
             .focusEffectDisabled()
+            .onChange(of: focus) { if focus != .list { isListFocusFromPointer = false } }
             .onKeyPress(.downArrow) { move(by: 1) }
             .onKeyPress(.upArrow) { move(by: -1) }
             // A short window scrolls the sidebar; keep the row picked by keyboard in view.
@@ -81,6 +97,8 @@ private struct SidebarRow: View {
     let section: SidebarSection
     let isSelected: Bool
     let focus: FocusState<Sidebar.Focus?>.Binding
+    /// Tab reached the list itself, so the selected row shows where ↑/↓ will act.
+    let hasKeyboardListFocus: Bool
     let select: () -> Void
 
     @State private var isHovered = false
@@ -103,23 +121,22 @@ private struct SidebarRow: View {
         .buttonStyle(.plain)
         // The sidebar's `focusEffectDisabled` also hides this button's ring, so `background` draws one.
         .focused(focus, equals: .row(section))
-        // ⌘1…⌘9 in sidebar order: the buttons don't get the arrow-key navigation a List had.
-        .keyboardShortcut(KeyEquivalent(Character(String(Sidebar.order.firstIndex(of: section)! + 1))))
+        // ⌘-numbers in sidebar order: the buttons don't get the arrow-key navigation a List had.
+        .keyboardShortcut(Sidebar.shortcut(for: section))
         .onHover { isHovered = $0 }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     @ViewBuilder private var background: some View {
         let shape = RoundedRectangle(cornerRadius: Layout.Spacing.s)
-        // An inactive window shows no focus, like a List's selection turning gray.
-        let hasListFocus = appearsActive && isSelected && focus.wrappedValue == .list
-        let hasKeyboardFocus = appearsActive && focus.wrappedValue == .row(section)
-        // The tint pushed toward black (white in dark mode) by 35%: at least 3:1 against the sidebar and the tinted card for every section color.
+        // Keyboard focus only, never after a click; an inactive window shows none.
+        let hasKeyboardFocus = appearsActive && (focus.wrappedValue == .row(section) || isSelected && hasKeyboardListFocus)
+        // The tint pushed toward black (white in dark mode) by 35%: at least 3:1 against the sidebar and the card.
         let focusRing = shape.strokeBorder(section.tint.mix(with: colorScheme == .dark ? .white : .black, by: 0.35), lineWidth: 1.5)
         if isSelected {
-            // Like a List: a colored selection while the sidebar has focus, a neutral one after focus moves on.
-            shape.fill(hasListFocus ? AnyShapeStyle(section.tint.opacity(0.2)) : AnyShapeStyle(.background))
-                .overlay { if hasListFocus || hasKeyboardFocus { focusRing } }
+            // One neutral card for every section and focus state: the icon tile already carries the section's color.
+            shape.fill(.background)
+                .overlay { if hasKeyboardFocus { focusRing } }
                 .shadow(color: .black.opacity(0.08), radius: 1, y: 1)
         } else if hasKeyboardFocus {
             focusRing

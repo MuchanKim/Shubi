@@ -39,6 +39,8 @@ struct SmartCleanTests {
         ("iOS 17.2", .runtime),
         ("Shubi 1.0.xcarchive", .archive),
         ("zoom.us", .log),
+        // Even a verified AI cache: it sits next to the user's conversations.
+        ("cache", .aiData(AIEntry(tool: .codex, category: .cache, isVerified: true))),
     ])
     func userFilesAndRuntimesAreExcluded(_ name: String, _ kind: ScanItem.Kind) {
         #expect(!item(kind, name: name, isOrphaned: kind == .appData).isSmartCleanable)

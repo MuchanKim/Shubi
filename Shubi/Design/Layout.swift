@@ -37,6 +37,9 @@ enum Layout {
     static let locationColumnMinWidth: CGFloat = 120
     static let sizeColumnWidth: CGFloat = 88
     static let dateColumnWidth: CGFloat = 112
+    /// The AI section's tool and kind columns, which take the location column's place: the minimums still add up to 480.
+    static let tagColumnMinWidth: CGFloat = 60
+    static let tagColumnIdealWidth: CGFloat = 96
 
     static let ringPanelWidth: CGFloat = 320
     static let ringSize: CGFloat = 232
