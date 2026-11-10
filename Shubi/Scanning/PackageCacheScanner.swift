@@ -79,7 +79,7 @@ nonisolated enum PackageCacheScanner {
     }
 
     /// GUI apps don't get the user's PATH, so ask a login shell.
-    private static func installedBinaries(_ names: [String]) throws -> Set<String> {
+    static func installedBinaries(_ names: [String]) throws -> Set<String> {
         // `true` last: the exit status would otherwise be that of the last missing tool.
         let script = names.map { "command -v \($0) >/dev/null 2>&1 && echo \($0)" }.joined(separator: "; ") + "; true"
         let output = try runProcess("/bin/zsh", ["-lc", script], timeout: 30)

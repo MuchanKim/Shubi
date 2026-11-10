@@ -5,7 +5,7 @@ import Testing
 /// Runs every scanner against this Mac: results vary, but IDs must be unique (Table requires it).
 struct ScannerTests {
     @Test(arguments: ["browser", "appCaches", "orphanedData", "simulators", "runtimes", "deviceSupport", "derivedData", "previews",
-                      "archives", "logs", "packages"])
+                      "archives", "logs", "ai", "packages"])
     func scanResultsHaveUniqueIDs(_ scanner: String) async throws {
         let items: [ScanItem] = switch scanner {
         case "browser": await BrowserScanner.scan()
@@ -18,6 +18,7 @@ struct ScannerTests {
         case "previews": await DeveloperScanner.previews()
         case "archives": await DeveloperScanner.archives()
         case "logs": await LibraryScanner.oldLogs()
+        case "ai": await AIScanner.scan(.all)
         default: try await PackageCacheScanner.scan()
         }
         #expect(Set(items.map(\.id)).count == items.count)

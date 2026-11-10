@@ -24,6 +24,23 @@ struct CleanerTests {
         ("/Users/tester/Library/WebKit/com.gone.app", .appData),
         ("/Users/tester/Library/Logs/zoom.us", .log),
         ("/Users/tester/Library/Logs/CoreSimulator/old.log", .log),
+        // A VS Code fork's Chromium cache stays App cache's, never the AI section's.
+        ("/Users/tester/Library/Application Support/Cursor/Cache", .cache),
+        ("/Users/tester/.claude/projects/-Users-tester-x/0b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e.jsonl", .aiData),
+        ("/Users/tester/.claude/projects/-Users-tester-x/0b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e", .aiData),
+        ("/Users/tester/.claude/file-history/0b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e", .aiData),
+        ("/Users/tester/.claude/shell-snapshots/snapshot-zsh-1.sh", .aiData),
+        ("/Users/tester/.codex/sessions/2026/11/10/rollout-2026-11-10T01-32-09-01a1c127-1d76-7f71-8777-73c0c632c3d3.jsonl.zst", .aiData),
+        ("/Users/tester/.codex/generated_images/019f2872-e2a0-78e3-b4a3-265f27a69674", .aiData),
+        ("/Users/tester/.codex/visualizations/2026/10/03", .aiData),
+        ("/Users/tester/.codex/.tmp/plugins", .aiData),
+        ("/Users/tester/.gemini/tmp/project/chats/session-2026-03-13T04-41-2a206734.json", .aiData),
+        ("/Users/tester/.gemini/antigravity/conversations/0b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e.pb", .aiData),
+        ("/Users/tester/.gemini/antigravity/brain/0b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e", .aiData),
+        ("/Users/tester/.aside/u/0/sessions/2026-10-20_JToejm1S7wLNdswA", .aiData),
+        ("/Users/tester/.t3/userdata/logs/desktop.trace.ndjson", .aiData),
+        ("/Users/tester/Library/Application Support/Cursor/logs/20261010T101010", .aiData),
+        ("/Users/tester/Library/Application Support/Antigravity/CachedData/abc", .aiData),
     ])
     func eachKindIsAllowedOnlyWhereItLives(_ path: String, _ policy: Cleaner.Policy) {
         #expect(Cleaner.isAllowed(URL(filePath: path), as: policy, home: home))
@@ -33,7 +50,7 @@ struct CleanerTests {
         }
     }
 
-    static let policies: [Cleaner.Policy] = [.cache, .developer, .appData, .app, .log, .ownFiles]
+    static let policies = Cleaner.Policy.allCases
 
     @Test(arguments: [
         "/System/Library/Kernels",
@@ -65,6 +82,56 @@ struct CleanerTests {
         // The folders themselves, never as the user's own files.
         "/Users/tester/Library",
         "/Users/tester/Applications",
+        // An AI tool's settings, credentials, databases and memory, next to what may go.
+        "/Users/tester/.claude",
+        "/Users/tester/.claude/settings.json",
+        "/Users/tester/.claude/CLAUDE.md",
+        "/Users/tester/.claude/skills/x",
+        "/Users/tester/.claude/history.jsonl",
+        "/Users/tester/.claude/sessions/x",
+        "/Users/tester/.claude/projects/-x",
+        "/Users/tester/.claude/projects/-x/memory",
+        "/Users/tester/.claude/projects/-x/memory/MEMORY.md",
+        "/Users/tester/.claude/projects/-x/0b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e.jsonl.bak",
+        // A session folder goes whole, never piece by piece.
+        "/Users/tester/.claude/projects/-x/0b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e/subagents/a.jsonl",
+        "/Users/tester/.claude/cache",
+        "/Users/tester/.claude/cache/../settings.json",
+        "/Users/tester/.codex/auth.json",
+        "/Users/tester/.codex/config.toml",
+        "/Users/tester/.codex/state_5.sqlite",
+        "/Users/tester/.codex/logs_2.sqlite",
+        "/Users/tester/.codex/session_index.jsonl",
+        "/Users/tester/.codex/sessions",
+        "/Users/tester/.codex/sessions/2026/11/10",
+        "/Users/tester/.codex/sessions/2026/11/10/notes.txt",
+        "/Users/tester/.codex/generated_images",
+        // A wildcard never matches a leading dot.
+        "/Users/tester/.codex/cache/.lock",
+        "/Users/tester/.gemini/oauth_creds.json",
+        "/Users/tester/.gemini/tmp/project/logs.json",
+        "/Users/tester/.gemini/antigravity",
+        "/Users/tester/.gemini/antigravity/user_settings.pb",
+        "/Users/tester/.gemini/antigravity-browser-profile/Default",
+        "/Users/tester/.aside/password-manager",
+        "/Users/tester/.aside/password-manager/vault",
+        "/Users/tester/.aside/credentials.json",
+        "/Users/tester/.aside/u/0/state.db",
+        "/Users/tester/.aside/runtime/node",
+        "/Users/tester/.t3/statev2.sqlite",
+        "/Users/tester/.t3/worktrees/x",
+        "/Users/tester/.t3/userdata/attachments/a.png",
+        "/Users/tester/Library/Application Support/Cursor/User/settings.json",
+        "/Users/tester/Library/Application Support/Claude/vm_bundles/claudevm.bundle/sessiondata.img",
+        // Listed for review only: not verified, the tool's own state, or a tool Shubi doesn't know.
+        "/Users/tester/.claude/jobs",
+        "/Users/tester/.gemini/history",
+        "/Users/tester/.gemini/antigravity/implicit",
+        "/Users/tester/.aside/runtime",
+        "/Users/tester/.t3/userdata/attachments",
+        "/Users/tester/Library/Application Support/Cursor/User",
+        "/Users/tester/Library/Application Support/Claude/vm_bundles/claudevm.bundle",
+        "/Users/tester/.android/studio/agent/conversations",
     ])
     func rejectsEverythingElse(_ path: String) {
         for policy in Self.policies {
@@ -86,6 +153,23 @@ struct CleanerTests {
         // What the scanner would list as the cache's contents.
         let throughCache = caches.appending(path: "Firefox/SomeApp")
         #expect(!Cleaner.isAllowed(throughCache, as: .cache, home: home))
+    }
+
+    /// An AI cache entry that links into ~/Documents may go itself, but takes nothing through it. A tool folder kept
+    /// in a dotfiles repo resolves outside the catalog, so nothing in it is deleted.
+    @Test func aiPathsThroughSymlinksAreRefused() throws {
+        let home = try makeTempHome()
+        try Data("x".utf8).write(to: home.appending(path: "Documents/notes.txt"))
+        let cache = home.appending(path: ".claude/cache")
+        try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: cache.appending(path: "link"), withDestinationURL: home.appending(path: "Documents"))
+        #expect(Cleaner.isAllowed(cache.appending(path: "link"), as: .aiData, home: home))
+        #expect(!Cleaner.isAllowed(cache.appending(path: "link/notes.txt"), as: .aiData, home: home))
+
+        let dotfiles = home.appending(path: "dotfiles/codex/cache")
+        try FileManager.default.createDirectory(at: dotfiles, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: home.appending(path: ".codex"), withDestinationURL: home.appending(path: "dotfiles/codex"))
+        #expect(!Cleaner.isAllowed(home.appending(path: ".codex/cache/x"), as: .aiData, home: home))
     }
 
     @Test func rejectsPathThroughSymlinkedParent() throws {
@@ -219,6 +303,25 @@ struct CleanerTests {
         #expect(Cleaner.clean([item], mode: .permanent).isEmpty)
         #expect(FileManager.default.fileExists(atPath: written.path(percentEncoded: false)))
         #expect(!FileManager.default.fileExists(atPath: untouched.path(percentEncoded: false)))
+    }
+
+    /// A session written to since the scan is in use again; an old one still only goes from where the catalog allows.
+    /// A session is checked whole before anything goes: one file outside the catalog keeps all of them.
+    /// Freshness and growth since the scan are checked on a fixture home in `AIScannerTests`.
+    @Test func aiSessionOutsideTheCatalogIsRefusedWhole() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "Shubi-ai-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let written = folder.appending(path: "written.jsonl"), old = folder.appending(path: "old.jsonl")
+        try Data("x".utf8).write(to: written)
+        try Data("x".utf8).write(to: old)
+        try FileManager.default.setAttributes([.modificationDate: Date.now.addingTimeInterval(-86_400)], ofItemAtPath: old.path(percentEncoded: false))
+        let session = ScanItem.Kind.aiData(AIEntry(tool: .claudeCode, category: .conversation, isVerified: true))
+
+        // Outside the home folder, so outside every catalog path.
+        let stray = Cleaner.clean([ScanItem(url: old, name: "old", size: 1, lastUsed: nil, kind: session, targets: [old, written])], mode: .permanent)
+        #expect(stray.map(\.reason) == [String(localized: "허용되지 않은 경로")])
+        for file in [written, old] { #expect(FileManager.default.fileExists(atPath: file.path(percentEncoded: false))) }
     }
 
     /// An app started after the scan keeps its files; Finder is always running.

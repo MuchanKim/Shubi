@@ -53,7 +53,8 @@ nonisolated enum ItemFacts {
         case .browserCache, .cache:
             add("앱 설치 상태", item.isOrphaned ? String(localized: "삭제됨", bundle: .shown, locale: .shown) : item.isOwnerUnknown ? String(localized: "알 수 없음", bundle: .shown, locale: .shown) : String(localized: "설치됨", bundle: .shown, locale: .shown))
             add("들어 있는 항목", String(localized: "\(item.targets.count)개", bundle: .shown, locale: .shown))
-        case .simulator, .appData, .runtime, .deviceSupport, .derivedData, .previews, .packageCache, .archive, .log:
+        // The AI scanner puts the tool, its install state and the project into `details`.
+        case .simulator, .appData, .runtime, .deviceSupport, .derivedData, .previews, .packageCache, .archive, .log, .aiData:
             break
         case .document, .largeFile:
             add("만든 날짜", values?.creationDate?.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .shown)))
@@ -168,6 +169,8 @@ nonisolated enum ItemFacts {
         case .log:
             return DeletionRisk(level: .safe, title: "30일 넘게 지난 로그예요",
                                 reason: "최근 30일 안의 로그는 남겨 둬요.")
+        case .aiData(let entry):
+            return entry.risk(isOrphaned: item.isOrphaned)
         case .document, .largeFile:
             if inICloud {
                 return DeletionRisk(level: .caution, title: "iCloud Drive에서도 지워져요",
@@ -217,6 +220,7 @@ extension ScanItem.Kind {
         case .packageCache: String(localized: "패키지 캐시", bundle: .shown, locale: .shown)
         case .archive: String(localized: "Xcode 아카이브", bundle: .shown, locale: .shown)
         case .log: String(localized: "로그", bundle: .shown, locale: .shown)
+        case .aiData(let entry): entry.categoryName
         case .app, .document, .largeFile: nil
         }
     }

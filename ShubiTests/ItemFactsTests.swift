@@ -70,6 +70,38 @@ struct ItemFactsTests {
         #expect(ItemFacts.risk(for: brew, facts: []).level == .caution)
     }
 
+    @Test(arguments: [
+        AIEntry(tool: nil, category: .conversation, isVerified: false),
+        AIEntry(tool: .claudeApp, category: .toolData, isVerified: false),
+        AIEntry(tool: .aside, category: .cache, isVerified: false),
+    ])
+    func reviewOnlyAIDataSaysShubiWontDeleteIt(_ entry: AIEntry) {
+        let risk = ItemFactsTests.risk(of: entry)
+        #expect(risk.level == .caution)
+        #expect(risk.title == String(localized: "Shubi는 이 항목을 지우지 않아요"))
+    }
+
+    /// Deleting a Codex rollout leaves its row in Codex's own index.
+    @Test func codexConversationMentionsItsIndex() {
+        let caveat = String(localized: "Codex 대화 목록에는 이름이 남을 수 있어요.")
+        #expect(Self.risk(of: AIEntry(tool: .codex, category: .conversation, isVerified: true)).reason.contains(caveat))
+        #expect(!Self.risk(of: AIEntry(tool: .claudeCode, category: .conversation, isVerified: true)).reason.contains(caveat))
+    }
+
+    @Test func aiVerdictsFollowWhatTheFileHolds() {
+        #expect(Self.risk(of: AIEntry(tool: .codex, category: .cache, isVerified: true)).level == .safe)
+        #expect(Self.risk(of: AIEntry(tool: .t3Code, category: .log, isVerified: true)).level == .safe)
+        #expect(Self.risk(of: AIEntry(tool: .codex, category: .output, isVerified: true)).level == .caution)
+        let leftover = Self.risk(of: AIEntry(tool: .antigravity, category: .conversation, isVerified: true), isOrphaned: true)
+        #expect(leftover.level == .caution)
+        #expect(leftover.title == String(localized: "삭제된 도구의 대화 기록이에요"))
+    }
+
+    private static func risk(of entry: AIEntry, isOrphaned: Bool = false) -> DeletionRisk {
+        let item = ScanItem(url: URL(filePath: "/tmp/ai"), name: "ai", size: 1, lastUsed: nil, kind: .aiData(entry), isOrphaned: isOrphaned)
+        return ItemFacts.risk(for: item, facts: [])
+    }
+
     @Test func orphanedAppDataNeedsCaution() {
         let data = ScanItem(url: URL(filePath: "/tmp/com.gone.app"), name: "com.gone.app", size: 1, lastUsed: nil, kind: .appData, isOrphaned: true)
         #expect(ItemFacts.risk(for: data, facts: []).level == .caution)

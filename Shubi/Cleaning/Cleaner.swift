@@ -11,11 +11,14 @@ nonisolated enum Cleaner {
 
     /// Where each kind of item may be deleted from. Each kind gets only its own rules: a cache folder that links into
     /// ~/Documents or into another app's data folder resolves outside the caches, so it can't take those files with it.
-    enum Policy: Sendable {
+    enum Policy: Sendable, CaseIterable {
         case cache, developer, appData, app, log
         /// Documents and large files the user picked: anything in the home folder outside ~/Library, ~/Applications
         /// and hidden folders.
         case ownFiles
+        /// AI tools' sessions, outputs, caches and logs: exactly the `delete:` globs of the `AITool` catalog. Their settings,
+        /// credentials and databases sit in the same folders and match none.
+        case aiData
 
         /// An uninstalled app leaves caches and logs next to its data; each is held to its own folder's rules.
         init(leftover: URL, home: URL = FileManager.default.homeDirectoryForCurrentUser) {
@@ -33,16 +36,30 @@ nonisolated enum Cleaner {
             case .app: self = .app
             case .log: self = .log
             case .document, .largeFile: self = .ownFiles
+            case .aiData: self = .aiData
             }
         }
     }
 
-    static func isAllowed(_ url: URL, as policy: Policy, home: URL = FileManager.default.homeDirectoryForCurrentUser) -> Bool {
-        // Resolve the parent only: deleting a symlink itself is harmless, but a symlinked parent could point anywhere.
+    /// Where deleting `url` really acts. Only the parent is resolved: deleting a symlink itself is harmless, but a
+    /// symlinked parent could point anywhere.
+    private static func realPath(of url: URL, home: URL) -> (path: String, parent: URL, home: String) {
         let parent = url.standardizedFileURL.deletingLastPathComponent().resolvingSymlinksInPath()
-        let path = parent.appending(path: url.lastPathComponent).path(percentEncoded: false)
+        return (parent.appending(path: url.lastPathComponent).path(percentEncoded: false), parent,
+                home.resolvingSymlinksInPath().path(percentEncoded: false).trimmingSuffix("/"))
+    }
+
+    /// The AI catalog's entry for where `url` really is. A link from one tool's folder into another's must not let the
+    /// other folder's files go by the first folder's rules.
+    static func aiEntry(atRealPathOf url: URL, home: URL = FileManager.default.homeDirectoryForCurrentUser) -> AIEntry? {
+        let (path, _, home) = realPath(of: url, home: home)
+        guard path.hasPrefix(home + "/") else { return nil }
+        return AITool.entry(forHomeRelative: String(path.dropFirst(home.count + 1)))
+    }
+
+    static func isAllowed(_ url: URL, as policy: Policy, home: URL = FileManager.default.homeDirectoryForCurrentUser) -> Bool {
+        let (path, parent, home) = realPath(of: url, home: home)
         let parentPath = parent.path(percentEncoded: false).trimmingSuffix("/")
-        let home = home.resolvingSymlinksInPath().path(percentEncoded: false).trimmingSuffix("/")
 
         func under(_ root: String) -> Bool { path.hasPrefix(root + "/") && path.count > root.count + 1 }
         // Whole app or device folders only, never something inside another app's data.
@@ -77,6 +94,8 @@ nonisolated enum Cleaner {
             func inside(_ root: String) -> Bool { path == root || under(root) }
             return under(home) && !inside(home + "/Library") && !inside(home + "/Applications")
                 && !path.dropFirst(home.count + 1).hasPrefix(".")
+        case .aiData:
+            return under(home) && AITool.isDeletable(homeRelative: String(path.dropFirst(home.count + 1)))
         }
     }
 
@@ -91,10 +110,19 @@ nonisolated enum Cleaner {
             if let command = item.command {
                 return run(command).map { [Failure(url: item.url, reason: $0)] } ?? []
             }
+            let failures: [Failure] = switch item.kind {
             // Each log is checked right before it goes: one written to since the scan is current again.
-            let failures = item.kind == .log
-                ? item.targets.flatMap { LibraryScanner.isOld($0, before: .now.addingTimeInterval(-LibraryScanner.logRetention)) ? delete([$0], as: .log, mode: mode) : [] }
-                : delete(item.targets, as: Policy(item.kind), mode: mode)
+            case .log:
+                item.targets.flatMap { LibraryScanner.isOld($0, before: .now.addingTimeInterval(-LibraryScanner.logRetention)) ? delete([$0], as: .log, mode: mode) : [] }
+            // A session in use again, grown or moved since the scan is skipped whole; a cache or log keeps just its fresh files.
+            case .aiData(let entry):
+                switch AIScanner.cleanCheck(item, as: entry, now: .now) {
+                case .delete(let urls): delete(urls, as: .aiData, mode: mode)
+                case .skip(let reason): [Failure(url: item.url, reason: reason)]
+                }
+            default:
+                delete(item.targets, as: Policy(item.kind), mode: mode)
+            }
             // Only once the app itself is gone: deleting its data while the app stays would just reset it.
             guard removesLeftovers, failures.isEmpty, !item.leftovers.isEmpty else { return failures }
             // Another copy of the app (an older or newer build elsewhere) still uses the same data.
