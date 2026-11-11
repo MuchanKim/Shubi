@@ -118,7 +118,7 @@ struct OrphanedDataView: View {
 
 struct DeveloperView: View {
     enum Target: CaseIterable {
-        case simulators, runtimes, deviceSupport, derivedData, previews, archives
+        case simulators, runtimes, deviceSupport, derivedData, previews, testDevices, archives
 
         var title: LocalizedStringResource {
             switch self {
@@ -127,6 +127,7 @@ struct DeveloperView: View {
             case .deviceSupport: "DeviceSupport"
             case .derivedData: "DerivedData"
             case .previews: "Previews"
+            case .testDevices: "테스트 기기"
             case .archives: "Archives"
             }
         }
@@ -138,6 +139,7 @@ struct DeveloperView: View {
             case .deviceSupport: DeveloperScanner.deviceSupport
             case .derivedData: DeveloperScanner.derivedData
             case .previews: DeveloperScanner.previews
+            case .testDevices: DeveloperScanner.testDevices
             case .archives: DeveloperScanner.archives
             }
         }

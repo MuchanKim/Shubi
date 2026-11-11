@@ -54,7 +54,7 @@ nonisolated enum ItemFacts {
             add("앱 설치 상태", item.isOrphaned ? String(localized: "삭제됨", bundle: .shown, locale: .shown) : item.isOwnerUnknown ? String(localized: "알 수 없음", bundle: .shown, locale: .shown) : String(localized: "설치됨", bundle: .shown, locale: .shown))
             add("들어 있는 항목", String(localized: "\(item.targets.count)개", bundle: .shown, locale: .shown))
         // The AI scanner puts the tool, its install state and the project into `details`.
-        case .simulator, .appData, .runtime, .deviceSupport, .derivedData, .previews, .packageCache, .archive, .log, .aiData:
+        case .simulator, .appData, .runtime, .runtimeCache, .deviceSupport, .derivedData, .mcpBuild, .previews, .testDevices, .packageCache, .archive, .log, .aiData:
             break
         case .document, .largeFile:
             add("만든 날짜", values?.creationDate?.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .shown)))
@@ -124,15 +124,21 @@ nonisolated enum ItemFacts {
             let users = String(localized: "\(simulatorsUsingRuntime)개", bundle: .shown, locale: .shown)
             return DeletionRisk(level: simulatorsUsingRuntime == 0 ? .safe : .caution, title: "다시 받으려면 몇 GB를 내려받아야 해요",
                                 reason: "이 런타임을 쓰는 시뮬레이터 \(users)를 쓸 수 없게 돼요. Xcode 설정의 Components가 이 버전을 제공하면 다시 받을 수 있어요.")
+        case .runtimeCache:
+            return DeletionRisk(level: .safe, title: "시뮬레이터를 다음에 켤 때 다시 만들어져요",
+                                reason: "시뮬레이터를 빨리 띄우려고 런타임마다 만들어 두는 캐시예요. 지운 뒤 이 런타임의 시뮬레이터를 처음 켤 때 몇 분 동안 다시 준비해요.")
         case .deviceSupport:
             return DeletionRisk(level: .safe, title: "기기를 연결하면 다시 만들어져요",
                                 reason: "실제 기기 디버깅용 심볼이에요. 이 버전의 기기를 다시 연결하면 몇 분 동안 다시 준비해요.")
-        case .derivedData:
+        case .derivedData, .mcpBuild:
             return DeletionRisk(level: .safe, title: "다음 빌드 때 다시 만들어져요",
                                 reason: "지운 뒤 첫 빌드와 코드 인덱싱만 느려져요.")
         case .previews:
             return DeletionRisk(level: .safe, title: "다음 미리보기 때 다시 만들어져요",
                                 reason: "지운 뒤 처음 여는 미리보기만 조금 느려져요.")
+        case .testDevices:
+            return DeletionRisk(level: .safe, title: "다음 병렬 테스트 때 다시 만들어져요",
+                                reason: "Xcode가 테스트를 나눠 돌리려고 만든 시뮬레이터 복제본이에요. 지운 뒤 첫 병렬 테스트만 조금 느려져요.")
         case .packageCache:
             // `--prune=all` also uninstalls every version of a formula but the one in use.
             if item.command?.hasPrefix("brew cleanup") == true {
@@ -214,8 +220,11 @@ extension ScanItem.Kind {
         case .appData: String(localized: "앱 데이터 폴더", bundle: .shown, locale: .shown)
         case .simulator: String(localized: "iOS 시뮬레이터", bundle: .shown, locale: .shown)
         case .runtime: String(localized: "시뮬레이터 런타임", bundle: .shown, locale: .shown)
+        case .runtimeCache: String(localized: "시뮬레이터 dyld 캐시", bundle: .shown, locale: .shown)
+        case .testDevices: String(localized: "병렬 테스트 시뮬레이터", bundle: .shown, locale: .shown)
         case .deviceSupport: String(localized: "기기 디버깅 심볼", bundle: .shown, locale: .shown)
         case .derivedData: String(localized: "Xcode 빌드 데이터", bundle: .shown, locale: .shown)
+        case .mcpBuild: String(localized: "XcodeBuildMCP 빌드 데이터", bundle: .shown, locale: .shown)
         case .previews: String(localized: "SwiftUI Preview 시뮬레이터", bundle: .shown, locale: .shown)
         case .packageCache: String(localized: "패키지 캐시", bundle: .shown, locale: .shown)
         case .archive: String(localized: "Xcode 아카이브", bundle: .shown, locale: .shown)

@@ -13,6 +13,8 @@ nonisolated enum Cleaner {
     /// ~/Documents or into another app's data folder resolves outside the caches, so it can't take those files with it.
     enum Policy: Sendable, CaseIterable {
         case cache, developer, appData, app, log
+        /// XcodeBuildMCP's builds: a workspace's DerivedData, never the locks and state next to it.
+        case mcpBuild
         /// Documents and large files the user picked: anything in the home folder outside ~/Library, ~/Applications
         /// and hidden folders.
         case ownFiles
@@ -30,8 +32,9 @@ nonisolated enum Cleaner {
         init(_ kind: ScanItem.Kind) {
             switch kind {
             case .browserCache, .cache, .packageCache: self = .cache
-            // Simulators, runtimes and previews are cleaned by command, not by deleting files.
-            case .derivedData, .deviceSupport, .archive, .simulator, .runtime, .previews: self = .developer
+            // Simulators, runtimes, their caches, previews and test clones are cleaned by command, not by deleting files.
+            case .derivedData, .deviceSupport, .archive, .simulator, .runtime, .runtimeCache, .previews, .testDevices: self = .developer
+            case .mcpBuild: self = .mcpBuild
             case .appData: self = .appData
             case .app: self = .app
             case .log: self = .log
@@ -81,6 +84,9 @@ nonisolated enum Cleaner {
             if ["iOS", "watchOS", "tvOS", "visionOS"].contains(where: { childOf(developer + "/\($0) DeviceSupport") }) { return true }
             return parent.deletingLastPathComponent().path(percentEncoded: false).trimmingSuffix("/") == developer + "/Archives"
                 && url.pathExtension == "xcarchive"
+        case .mcpBuild:
+            return url.lastPathComponent == "DerivedData"
+                && parent.deletingLastPathComponent().path(percentEncoded: false).trimmingSuffix("/") == home + "/Library/Developer/XcodeBuildMCP/workspaces"
         case .appData:
             // An app's data folder, or what an uninstalled app leaves behind, found by its bundle ID.
             return ["Application Support", "Containers", "Saved Application State", "HTTPStorages", "WebKit"]
@@ -106,6 +112,11 @@ nonisolated enum Cleaner {
             // The scan may be minutes old; deleting a cache now would pull files out from under the app or a build.
             if item.isInUse {
                 return [Failure(url: item.url, reason: String(localized: "실행 중이라 건너뛰었어요. 앱을 종료한 뒤 다시 정리하세요.", bundle: .shown, locale: .shown))]
+            }
+            // A device started since the scan maps the cache, in any device set; unknown counts as in use.
+            // shortcut: a runtime swapped for another build of it since the scan isn't caught, and simctl would remove the new build's cache; recheck `simctl runtime list` here if runtimes get updated in place.
+            if item.kind == .runtimeCache, (try? DeveloperScanner.runtimesInUse()).map({ DeveloperScanner.isMapped(item.url, runtimesInUse: $0) }) ?? true {
+                return [Failure(url: item.url, reason: String(localized: "시뮬레이터가 켜져 있어서 건너뛰었어요. 시뮬레이터를 끈 뒤 다시 정리하세요.", bundle: .shown, locale: .shown))]
             }
             if let command = item.command {
                 return run(command).map { [Failure(url: item.url, reason: $0)] } ?? []
