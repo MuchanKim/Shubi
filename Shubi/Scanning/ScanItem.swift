@@ -3,7 +3,7 @@ import AppKit
 nonisolated struct ScanItem: Identifiable, Hashable, Sendable {
     enum Kind: Hashable, Sendable {
         case browserCache, cache, appData, app, document, largeFile
-        case simulator, runtime, deviceSupport, derivedData, previews, packageCache, archive, log
+        case simulator, runtime, runtimeCache, deviceSupport, derivedData, mcpBuild, previews, testDevices, packageCache, archive, log
         /// An AI tool's file. The only case with a payload: which tool and what it holds decide whether Shubi may delete it,
         /// and only the AI section reads it. Other code asks `isReviewOnly`.
         case aiData(AIEntry)
@@ -44,11 +44,14 @@ nonisolated struct ScanItem: Identifiable, Hashable, Sendable {
         switch kind {
         // Commands skip the trash and can do more than clear a cache: `brew cleanup --prune=all` also removes old kegs.
         case .browserCache, .cache, .derivedData, .deviceSupport, .packageCache: return command == nil
-        // Xcode recreates preview devices for the next preview. Any other simulator holds apps and data the user put there,
-        // even one whose runtime is gone: that only means it can't run until the runtime is back.
-        case .previews: return true
+        // Xcode recreates preview devices for the next preview and test clones for the next parallel test run. Any other
+        // simulator holds apps and data the user put there, even one whose runtime is gone: that only means it can't run
+        // until the runtime is back.
+        case .previews, .testDevices: return true
         // Archives hold the only copy of a shipped build's symbols; old logs don't come back once deleted.
-        case .app, .document, .largeFile, .appData, .simulator, .runtime, .archive, .log: return false
+        // A runtime's dyld cache comes back, but only after minutes of rebuilding when its simulator next boots.
+        // XcodeBuildMCP installs and runs the built app after xcodebuild exits, when only its server is left running.
+        case .app, .document, .largeFile, .appData, .simulator, .runtime, .runtimeCache, .mcpBuild, .archive, .log: return false
         // Conversations and outputs are the user's work; the caches sit next to them, so the section is reviewed by hand.
         case .aiData: return false
         }

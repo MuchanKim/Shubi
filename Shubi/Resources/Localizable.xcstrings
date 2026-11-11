@@ -87,6 +87,22 @@
         }
       }
     },
+    "%@ dyld 캐시" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ dyld cache"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ dyld 캐시"
+          }
+        }
+      }
+    },
     "%@ 남음" : {
       "localizations" : {
         "en" : {
@@ -807,6 +823,32 @@
         }
       }
     },
+    "XcodeBuildMCP 빌드 데이터" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "XcodeBuildMCP build data"
+          }
+        }
+      }
+    },
+    "Xcode가 테스트를 나눠 돌리려고 만든 시뮬레이터 복제본이에요. 지운 뒤 첫 병렬 테스트만 조금 느려져요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulator clones Xcode made to run tests in parallel. Only the first parallel test run afterwards is a little slower."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode가 테스트를 나눠 돌리려고 만든 시뮬레이터 복제본이에요. 지운 뒤 첫 병렬 테스트만 조금 느려져요."
+          }
+        }
+      }
+    },
     "brew cleanup은 내려받은 파일과 함께 설치된 패키지의 이전 버전을 지워요. 지금 쓰는 버전은 그대로예요." : {
       "localizations" : {
         "en" : {
@@ -1283,6 +1325,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "다음 미리보기 때 다시 만들어져요"
+          }
+        }
+      }
+    },
+    "다음 병렬 테스트 때 다시 만들어져요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recreated at the next parallel test run"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다음 병렬 테스트 때 다시 만들어져요"
           }
         }
       }
@@ -1895,6 +1953,22 @@
         }
       }
     },
+    "병렬 테스트 시뮬레이터" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Test Simulators"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "병렬 테스트 시뮬레이터"
+          }
+        }
+      }
+    },
     "보기 전용" : {
       "localizations" : {
         "en" : {
@@ -2471,6 +2545,22 @@
         }
       }
     },
+    "시뮬레이터 dyld 캐시" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulator dyld cache"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시뮬레이터 dyld 캐시"
+          }
+        }
+      }
+    },
     "시뮬레이터 런타임" : {
       "localizations" : {
         "en" : {
@@ -2483,6 +2573,48 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "시뮬레이터 런타임"
+          }
+        }
+      }
+    },
+    "시뮬레이터가 켜져 있어서 건너뛰었어요. 시뮬레이터를 끈 뒤 다시 정리하세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skipped because a simulator is running. Shut it down, then clean again."
+          }
+        }
+      }
+    },
+    "시뮬레이터를 다음에 켤 때 다시 만들어져요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recreated when a simulator next boots"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시뮬레이터를 다음에 켤 때 다시 만들어져요"
+          }
+        }
+      }
+    },
+    "시뮬레이터를 빨리 띄우려고 런타임마다 만들어 두는 캐시예요. 지운 뒤 이 런타임의 시뮬레이터를 처음 켤 때 몇 분 동안 다시 준비해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each runtime keeps this cache so its simulators start quickly. After you delete it, this runtime's simulators take a few minutes to get ready the first time they boot."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시뮬레이터를 빨리 띄우려고 런타임마다 만들어 두는 캐시예요. 지운 뒤 이 런타임의 시뮬레이터를 처음 켤 때 몇 분 동안 다시 준비해요."
           }
         }
       }
@@ -2847,18 +2979,18 @@
         }
       }
     },
-    "앱이 다시 만드는 캐시와 빌드 데이터, SwiftUI 미리보기 시뮬레이터만 바로 지워요. 실행 중인 앱의 캐시와 내 파일은 그대로 둬요." : {
+    "앱이 다시 만드는 캐시와 빌드 데이터, SwiftUI 미리보기와 병렬 테스트 시뮬레이터만 바로 지워요. 실행 중인 앱의 캐시와 내 파일은 그대로 둬요." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deletes right away only caches and build data that apps make again, and SwiftUI preview simulators. Caches of running apps and your own files stay."
+            "value" : "Deletes right away only caches and build data that apps make again, and SwiftUI preview and parallel test simulators. Caches of running apps and your own files stay."
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "앱이 다시 만드는 캐시와 빌드 데이터, SwiftUI 미리보기 시뮬레이터만 바로 지워요. 실행 중인 앱의 캐시와 내 파일은 그대로 둬요."
+            "value" : "앱이 다시 만드는 캐시와 빌드 데이터, SwiftUI 미리보기와 병렬 테스트 시뮬레이터만 바로 지워요. 실행 중인 앱의 캐시와 내 파일은 그대로 둬요."
           }
         }
       }
@@ -3691,6 +3823,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "테마"
+          }
+        }
+      }
+    },
+    "테스트 기기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test Devices"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "테스트 기기"
           }
         }
       }

@@ -17,7 +17,7 @@ struct SmartCleanTests {
         #expect(!item(.cache, isOwnerUnknown: true).isSmartCleanable)
     }
 
-    @Test(arguments: [ScanItem.Kind.browserCache, .cache, .previews, .derivedData, .deviceSupport])
+    @Test(arguments: [ScanItem.Kind.browserCache, .cache, .previews, .testDevices, .derivedData, .deviceSupport])
     func runningItemIsExcluded(_ kind: ScanItem.Kind) {
         #expect(!item(kind, isRunning: true).isSmartCleanable)
     }
@@ -37,6 +37,10 @@ struct SmartCleanTests {
         ("Figma.dmg", .largeFile),
         ("com.gone.app", .appData),
         ("iOS 17.2", .runtime),
+        // Rebuilt, but only by minutes of work when its simulator next boots.
+        ("iOS 26.4 dyld", .runtimeCache),
+        // Rebuilt, but XcodeBuildMCP still runs the app it built after xcodebuild exits.
+        ("Shubi · XcodeBuildMCP", .mcpBuild),
         ("Shubi 1.0.xcarchive", .archive),
         ("zoom.us", .log),
         // Even a verified AI cache: it sits next to the user's conversations.
@@ -46,9 +50,10 @@ struct SmartCleanTests {
         #expect(!item(kind, name: name, isOrphaned: kind == .appData).isSmartCleanable)
     }
 
-    /// Xcode recreates preview devices, so their delete command is the one command smart clean runs.
-    @Test func previewDevicesAreIncluded() {
-        #expect(item(.previews, command: "xcrun simctl --set previews delete all").isSmartCleanable)
+    /// Xcode recreates preview devices and parallel test clones, so their delete commands are the only commands smart clean runs.
+    @Test(arguments: [(ScanItem.Kind.previews, "xcrun simctl --set previews delete all"), (.testDevices, "xcrun simctl --set testing delete all")])
+    func recreatedDeviceSetsAreIncluded(_ kind: ScanItem.Kind, _ command: String) {
+        #expect(item(kind, command: command).isSmartCleanable)
     }
 
     /// A simulator whose runtime is gone still holds the apps and data put on it; it only can't run until the runtime is back.

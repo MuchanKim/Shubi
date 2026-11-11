@@ -5,7 +5,7 @@ import Testing
 /// Runs every scanner against this Mac: results vary, but IDs must be unique (Table requires it).
 struct ScannerTests {
     @Test(arguments: ["browser", "appCaches", "orphanedData", "simulators", "runtimes", "deviceSupport", "derivedData", "previews",
-                      "archives", "logs", "ai", "packages"])
+                      "testDevices", "archives", "logs", "ai", "packages"])
     func scanResultsHaveUniqueIDs(_ scanner: String) async throws {
         let items: [ScanItem] = switch scanner {
         case "browser": await BrowserScanner.scan()
@@ -16,6 +16,7 @@ struct ScannerTests {
         case "deviceSupport": await DeveloperScanner.deviceSupport()
         case "derivedData": await DeveloperScanner.derivedData()
         case "previews": await DeveloperScanner.previews()
+        case "testDevices": await DeveloperScanner.testDevices()
         case "archives": await DeveloperScanner.archives()
         case "logs": await LibraryScanner.oldLogs()
         case "ai": await AIScanner.scan(.all)
@@ -98,6 +99,35 @@ struct ScannerTests {
     @Test func runtimeNamesAreReadable() {
         #expect(DeveloperScanner.runtimeName("com.apple.CoreSimulator.SimRuntime.iOS-26-4") == "iOS 26.4")
         #expect(DeveloperScanner.runtimeName("com.apple.CoreSimulator.SimRuntime.watchOS-11-2") == "watchOS 11.2")
+    }
+
+    /// simctl removes a cache only by its installed runtime's identifier; another build's or a removed runtime's isn't offered.
+    @Test func dyldCachesBelongToInstalledRuntimes() throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: "Shubi-dyld-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        for name in ["com.apple.CoreSimulator.SimRuntime.iOS-26-4.23E244", "com.apple.CoreSimulator.SimRuntime.iOS-26-4.23E100",
+                     "com.apple.CoreSimulator.SimRuntime.iOS-17-0.21A328", "inc"] {
+            try FileManager.default.createDirectory(at: root.appending(path: name), withIntermediateDirectories: true)
+        }
+        let caches = DeveloperScanner.dyldCaches(in: root, installed: [("com.apple.CoreSimulator.SimRuntime.iOS-26-4", "23E244")])
+        #expect(caches.map(\.folder.lastPathComponent) == ["com.apple.CoreSimulator.SimRuntime.iOS-26-4.23E244"])
+        #expect(caches.map(\.runtime) == ["com.apple.CoreSimulator.SimRuntime.iOS-26-4"])
+
+        // Removing by identifier could take the other build's cache.
+        #expect(DeveloperScanner.dyldCaches(in: root, installed: [("com.apple.CoreSimulator.SimRuntime.iOS-26-4", "23E244"),
+                                                                   ("com.apple.CoreSimulator.SimRuntime.iOS-26-4", "23E100")]).isEmpty)
+    }
+
+    @Test(arguments: [("com.apple.CoreSimulator.SimRuntime.iOS-26-4", true), ("com.apple.CoreSimulator.SimRuntime.iOS-26", false),
+                      ("com.apple.CoreSimulator.SimRuntime.iOS-26-4-1", false)])
+    func cacheIsMappedOnlyByItsOwnRuntime(_ booted: String, _ expected: Bool) {
+        let cache = URL(filePath: "/Library/Developer/CoreSimulator/Caches/dyld/26A428/com.apple.CoreSimulator.SimRuntime.iOS-26-4.23E244")
+        #expect(DeveloperScanner.isMapped(cache, runtimesInUse: [booted]) == expected)
+    }
+
+    @Test(arguments: [("Booted", true), ("Booting", true), ("Shutting Down", true), (nil, true), ("Shutdown", false)])
+    func onlyAShutDownDeviceFreesItsCache(_ state: String?, _ expected: Bool) {
+        #expect(DeveloperScanner.isRunning(state: state) == expected)
     }
 
     /// A device can be unavailable while its runtime is still installed; only a removed runtime makes it orphaned.

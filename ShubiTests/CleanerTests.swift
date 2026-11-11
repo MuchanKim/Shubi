@@ -15,6 +15,7 @@ struct CleanerTests {
         ("/Applications/Foo.app", .app),
         ("/Users/tester/Applications/Bar.app", .app),
         ("/Users/tester/Library/Developer/Xcode/DerivedData/Shubi-abc", .developer),
+        ("/Users/tester/Library/Developer/XcodeBuildMCP/workspaces/Shubi-abc/DerivedData", .mcpBuild),
         ("/Users/tester/Library/Developer/Xcode/iOS DeviceSupport/iPhone17,3 26.5.2", .developer),
         ("/Users/tester/Library/Developer/Xcode/Archives/2026-01-02/Shubi 1-2-26.xcarchive", .developer),
         ("/Users/tester/Library/Application Support/com.gone.app", .appData),
@@ -66,6 +67,11 @@ struct CleanerTests {
         "/Users/tester/Library/Application Support",
         "/Users/tester/Library/Developer/Xcode/DerivedData",
         "/Users/tester/Library/Developer/CoreSimulator/Devices/ABC",
+        // XcodeBuildMCP's builds only, never the workspace with its locks and state, or a file inside the builds.
+        "/Users/tester/Library/Developer/XcodeBuildMCP/workspaces/Shubi-abc",
+        "/Users/tester/Library/Developer/XcodeBuildMCP/workspaces/Shubi-abc/state",
+        "/Users/tester/Library/Developer/XcodeBuildMCP/workspaces/DerivedData",
+        "/Users/tester/Library/Developer/XcodeBuildMCP/workspaces/Shubi-abc/DerivedData/Build",
         // An Electron app's settings and data next to its caches, or something inside a cache.
         "/Users/tester/Library/Application Support/Code/User",
         // Web apps fill CacheStorage themselves, so it may hold offline content that never comes back.
@@ -170,6 +176,18 @@ struct CleanerTests {
         try FileManager.default.createDirectory(at: dotfiles, withIntermediateDirectories: true)
         try FileManager.default.createSymbolicLink(at: home.appending(path: ".codex"), withDestinationURL: home.appending(path: "dotfiles/codex"))
         #expect(!Cleaner.isAllowed(home.appending(path: ".codex/cache/x"), as: .aiData, home: home))
+    }
+
+    /// A workspace that links into ~/Documents takes nothing from there, even a folder named DerivedData.
+    @Test func mcpWorkspaceLinkedElsewhereIsRefused() throws {
+        let home = try makeTempHome()
+        let project = home.appending(path: "Documents/Project")
+        try FileManager.default.createDirectory(at: project.appending(path: "DerivedData"), withIntermediateDirectories: true)
+        let workspaces = home.appending(path: "Library/Developer/XcodeBuildMCP/workspaces")
+        try FileManager.default.createDirectory(at: workspaces.appending(path: "Real-abc/DerivedData"), withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: workspaces.appending(path: "Project-abc"), withDestinationURL: project)
+        #expect(Cleaner.isAllowed(workspaces.appending(path: "Real-abc/DerivedData"), as: .mcpBuild, home: home))
+        #expect(!Cleaner.isAllowed(workspaces.appending(path: "Project-abc/DerivedData"), as: .mcpBuild, home: home))
     }
 
     @Test func rejectsPathThroughSymlinkedParent() throws {

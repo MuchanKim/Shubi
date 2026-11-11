@@ -332,7 +332,7 @@ struct SummaryView: View {
         }
     }
 
-    static let smartCleanInfo: LocalizedStringKey = "앱이 다시 만드는 캐시와 빌드 데이터, SwiftUI 미리보기 시뮬레이터만 바로 지워요. 실행 중인 앱의 캐시와 내 파일은 그대로 둬요."
+    static let smartCleanInfo: LocalizedStringKey = "앱이 다시 만드는 캐시와 빌드 데이터, SwiftUI 미리보기와 병렬 테스트 시뮬레이터만 바로 지워요. 실행 중인 앱의 캐시와 내 파일은 그대로 둬요."
 
     /// No confirmation: it only takes what apps make again.
     private func smartClean() { Cleanup.shared.smartClean(scans: Self.scanned.flatMap(\.1)) }
